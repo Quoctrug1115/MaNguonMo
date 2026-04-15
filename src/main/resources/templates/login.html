@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Đăng nhập</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/auth.css}"> </head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="auth-page">
+    <div class="auth-container">
+        <div class="auth-image-box">
+            <img th:src="@{/images/auth-bg.png}" alt="Shopping Mobile">
+        </div>
+
+        <div class="auth-form-box">
+            <h1 class="auth-title">Đăng nhập</h1>
+            <p class="auth-subtitle">Điền thông tin của bạn</p>
+
+            <form action="#" method="POST" class="auth-form">
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Email hoặc Số Điện Thoại" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Mật khẩu" required>
+                </div>
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn-primary">Đăng nhập</button>
+                    <a href="#" class="forgot-password">Quên Mật Khẩu ?</a>
+                </div>
+            </form>
+
+            <div class="auth-footer" style="margin-top: 20px;">
+                <p>Bạn chưa có tài khoản? <a th:href="@{/register}">Đăng ký</a></p>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

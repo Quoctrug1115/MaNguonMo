@@ -1,0 +1,126 @@
+/* --- Cấu hình chung --- */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Block: Header --- */
+.header {
+    background-color: #ffffff;
+    width: 100%;
+    padding-top: 20px;
+}
+
+.header__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+/* Logo */
+.header__logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+
+/* Navigation */
+.header__nav {
+    display: flex;
+    gap: 30px;
+}
+
+.header__nav-link {
+    text-decoration: none;
+    color: #000000;
+    font-size: 16px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.header__nav-link:hover,
+.header__nav-link--active {
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    color: var(--primary-color, #2563EB);
+}
+
+/* Actions (Search + Icons) */
+.header__actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+/* Thanh tìm kiếm */
+.header__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.header__search-input {
+    padding: 10px 40px 10px 16px;
+    background-color: #F5F5F5;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 250px;
+    outline: none;
+}
+
+.header__search-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 20px;
+    color: #7D8184;
+    cursor: pointer;
+}
+
+/* Icons */
+.header__icons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header__icon-btn {
+    color: #000000;
+    font-size: 24px;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.header__icon-btn:hover {
+    color: var(--primary-color, #2563EB);
+}
+
+/* Số lượng sản phẩm trong giỏ hàng (Badge) */
+.header__cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: #DB4444; /* Màu đỏ */
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header__divider {
+    border: none;
+    border-top: 1px solid #E5E5E5;
+    margin-top: 20px;
+}

@@ -1,0 +1,165 @@
+/* --- Bố cục tổng thể trang Auth --- */
+.auth-page {
+    padding: 60px 0 100px 0;
+}
+
+.auth-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 80px; /* Khoảng cách giữa ảnh và form */
+}
+
+/* --- Cột Trái: Hình ảnh --- */
+.auth-image-box {
+    flex: 1;
+    background-color: #CBE4E8; /* Màu xanh nhạt theo bản Figma */
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    height: 700px;
+    overflow: hidden;
+}
+
+.auth-image-box img {
+    max-width: 100%;
+    height: 100%;
+    object-fit: contain; /* Đảm bảo ảnh không bị méo */
+}
+
+/* --- Cột Phải: Form --- */
+.auth-form-box {
+    flex: 1;
+    max-width: 400px; /* Giới hạn độ rộng của form để trông gọn gàng */
+    padding-right: 40px;
+}
+
+.auth-title {
+    font-size: 36px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+}
+
+.auth-subtitle {
+    font-size: 16px;
+    color: var(--text-main);
+    margin-bottom: 40px;
+}
+
+/* Kiểu dáng Input: Chỉ có gạch chân */
+.form-group {
+    margin-bottom: 40px;
+}
+
+.auth-form input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #7D8184; /* Gạch chân xám */
+    padding: 10px 0;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    background-color: transparent;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+/* Khi click vào ô nhập liệu (Focus) */
+.auth-form input:focus {
+    border-bottom: 2px solid var(--primary-color, #2563EB); /* Đổi viền xanh */
+}
+
+.auth-form input::placeholder {
+    color: #7D8184;
+}
+
+/* --- Nút bấm và Liên kết --- */
+.auth-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color, #2563EB);
+    color: #ffffff;
+    border: none;
+    padding: 16px 48px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+    opacity: 0.8;
+}
+
+.forgot-password {
+    color: var(--secondary-color, #DB4444); /* Chữ màu đỏ */
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+.auth-footer a {
+    color: var(--primary-color, #2563EB);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* --- Bổ sung cho trang Register --- */
+
+.auth-actions-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Khoảng cách giữa 2 nút */
+    margin-top: 40px;
+}
+
+.w-100 {
+    width: 100%;
+    padding: 16px 0; /* Nút to và dài bằng form */
+    text-align: center;
+}
+
+/* Nút Sign up with Google */
+.btn-google {
+    background-color: transparent;
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.3); /* Viền xám mờ */
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* Khoảng cách giữa logo và chữ */
+    transition: background-color 0.3s;
+}
+
+.btn-google:hover {
+    background-color: #F5F5F5;
+}
+
+.google-icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* Căn giữa dòng chữ "Bạn đã có tài khoản?" */
+.text-center {
+    text-align: center;
+    color: #7D8184;
+}

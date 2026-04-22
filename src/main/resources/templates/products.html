@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Tất cả sản phẩm</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <link rel="stylesheet" th:href="@{/css/shop.css}"> </head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container shop-page" style="padding-top: 40px; padding-bottom: 80px;">
+        
+        <div class="breadcrumb">
+            <a href="/">Trang chủ</a> <span class="separator">/</span> 
+            <span class="current">Tất cả sản phẩm</span>
+        </div>
+
+        <div class="shop-layout">
+            <aside class="shop-sidebar">
+                <div class="filter-group">
+                    <h3 class="filter-title">Danh Mục</h3>
+                    <ul class="filter-list">
+                        <li><label><input type="checkbox"> Điện thoại & Phụ kiện</label></li>
+                        <li><label><input type="checkbox"> Máy tính & Laptop</label></li>
+                        <li><label><input type="checkbox"> Đồng hồ thông minh</label></li>
+                        <li><label><input type="checkbox"> Gaming & Console</label></li>
+                    </ul>
+                </div>
+
+                <div class="filter-group">
+                    <h3 class="filter-title">Khoảng Giá</h3>
+                    <ul class="filter-list">
+                        <li><label><input type="radio" name="price"> Dưới $100</label></li>
+                        <li><label><input type="radio" name="price"> $100 - $500</label></li>
+                        <li><label><input type="radio" name="price"> $500 - $1000</label></li>
+                        <li><label><input type="radio" name="price"> Trên $1000</label></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <section class="shop-main">
+                <div class="shop-toolbar">
+                    <p class="result-count">Hiển thị 1–9 của 50 kết quả</p>
+                    <div class="sort-box">
+                        <label>Sắp xếp:</label>
+                        <select class="sort-select">
+                            <option>Mặc định</option>
+                            <option>Giá: Thấp đến Cao</option>
+                            <option>Giá: Cao xuống Thấp</option>
+                            <option>Đánh giá cao nhất</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="shop-grid">
+                    <div th:each="p : ${products}" class="product-card">
+                        <div class="product-card__img-box">
+                            <div class="product-card__actions">
+                                <button><i class="ph ph-heart"></i></button>
+                                <button><i class="ph ph-eye"></i></button>
+                            </div>
+                            <img th:src="${p.img}" alt="Product">
+                            <button class="product-card__add-btn">Thêm vào giỏ hàng</button>
+                        </div>
+                        <div class="product-card__info">
+                            <h3 th:text="${p.name}">Tên sản phẩm</h3>
+                            <div class="product-card__price">
+                                <span class="new" th:text="'$' + ${p.price}">$120</span>
+                                <span class="old" th:if="${p.containsKey('oldPrice')}" th:text="'$' + ${p.get('oldPrice')}">$160</span>
+                            </div>
+                            <div class="product-card__rating">
+                                <div class="stars">★★★★★</div>
+                                <span th:text="'(' + ${p.rating} + ')'">(88)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pagination">
+                    <a href="#" class="page-link prev"><i class="ph ph-caret-left"></i></a>
+                    <a href="#" class="page-link active">1</a>
+                    <a href="#" class="page-link">2</a>
+                    <a href="#" class="page-link">3</a>
+                    <span class="page-dots">...</span>
+                    <a href="#" class="page-link">10</a>
+                    <a href="#" class="page-link next"><i class="ph ph-caret-right"></i></a>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

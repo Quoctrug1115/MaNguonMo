@@ -17,4 +17,9 @@ public class AuthController {
         model.addAttribute("title", "Đăng ký - Cửa Hàng Điện Máy");
         return "register"; // Trả về file register.html
     }
+    @GetMapping("/forgot-password")
+    public String forgotPassword(Model model) {
+        model.addAttribute("title", "Quên mật khẩu - Cửa Hàng Điện Máy");
+        return "forgot-password"; 
+    }
 }

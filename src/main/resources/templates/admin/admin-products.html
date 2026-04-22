@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">Products</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        
+        <div class="main-content">
+            <main class="dashboard-body">
+                <div class="page-header-row">
+                    <h1 class="page-title">Quản lý Sản Phẩm</h1>
+                    <button class="btn-admin-primary"><i class="ph ph-plus"></i> Thêm Sản Phẩm Mới</button>
+                </div>
+
+                <div class="table-section">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Mã SP</th>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Giá bán</th>
+                                <th>Tồn kho</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${products}">
+                                <td th:text="${p.id}">PRO-01</td>
+                                <td>
+                                    <div class="product-cell">
+                                        <img th:src="${p.img}" alt="Product">
+                                        <span th:text="${p.name}">Apple Watch</span>
+                                    </div>
+                                </td>
+                                <td th:text="${p.category}">Đồng hồ</td>
+                                <td th:text="'$' + ${p.price}">$399</td>
+                                <td>
+                                    <span th:if="${p.stock > 0}" th:text="${p.stock} + ' in stock'" style="color: #00B69B;">45 in stock</span>
+                                    <span th:if="${p.stock == 0}" class="text-danger">Out of stock</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn edit-btn" title="Chỉnh sửa"><i class="ph ph-pencil-simple"></i></button>
+                                        <button class="action-btn delete-btn" title="Xóa"><i class="ph ph-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

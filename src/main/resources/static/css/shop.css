@@ -1,0 +1,136 @@
+/* --- Bố cục chính 2 cột --- */
+.shop-layout {
+    display: flex;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+/* --- CỘT TRÁI: Sidebar Filter --- */
+.shop-sidebar {
+    width: 250px;
+    flex-shrink: 0; /* Không cho sidebar bị bóp méo */
+}
+
+.filter-group {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #E5E5E5;
+}
+
+.filter-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.filter-list li {
+    margin-bottom: 12px;
+}
+
+.filter-list label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    color: #000;
+    transition: color 0.2s;
+}
+
+.filter-list label:hover {
+    color: var(--primary-color, #2563EB);
+}
+
+/* Custom Checkbox/Radio */
+.filter-list input[type="checkbox"],
+.filter-list input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--secondary-color, #DB4444); /* Màu đỏ chủ đạo cho dấu tick */
+    cursor: pointer;
+}
+
+/* --- CỘT PHẢI: Lưới Sản Phẩm --- */
+.shop-main {
+    flex: 1;
+}
+
+.shop-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background-color: #F5F5F5;
+    padding: 12px 20px;
+    border-radius: 4px;
+}
+
+.result-count {
+    margin: 0;
+    color: #7D8184;
+}
+
+.sort-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-select {
+    padding: 8px 12px;
+    border: 1px solid #E5E5E5;
+    border-radius: 4px;
+    background-color: #fff;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+}
+
+/* Lưới hiển thị 3 sản phẩm 1 hàng */
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+/* --- Phân trang (Pagination) --- */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-link {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #000;
+    border: 1px solid #E5E5E5;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.page-link:hover, .page-link.active {
+    background-color: var(--secondary-color, #DB4444);
+    color: #fff;
+    border-color: var(--secondary-color, #DB4444);
+}
+
+.page-dots {
+    color: #7D8184;
+    letter-spacing: 2px;
+}

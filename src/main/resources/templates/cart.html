@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Giỏ hàng</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/cart.css}"> </head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container" style="padding-top: 40px; padding-bottom: 80px;">
+        <div class="breadcrumb">
+            <a href="/">Trang chủ</a> <span class="separator">/</span> 
+            <span class="current">Giỏ hàng</span>
+        </div>
+
+        <div class="cart-section">
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${cartItems}">
+                        <td class="cart-product-info">
+                            <button class="remove-item-btn"><i class="ph ph-x-circle"></i></button>
+                            <img th:src="${item.img}" alt="Product">
+                            <span th:text="${item.name}">Tên sản phẩm</span>
+                        </td>
+                        <td th:text="'$' + ${item.price}">$650</td>
+                        <td>
+                            <div class="cart-qty-selector">
+                                <input type="number" th:value="${item.quantity}" min="1" class="qty-input-box">
+                            </div>
+                        </td>
+                        <td th:text="'$' + (${item.price} * ${item.quantity})">$650</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="cart-actions-row">
+                <a th:href="@{/products}" class="btn-outline">Trở về cửa hàng</a>
+                <button class="btn-outline">Cập nhật giỏ hàng</button>
+            </div>
+
+            <div class="cart-bottom-row">
+                <div class="coupon-box">
+                    <input type="text" placeholder="Mã giảm giá">
+                    <button class="btn-primary">Áp dụng</button>
+                </div>
+
+                <div class="cart-total-box">
+                    <h3>Tổng tiền giỏ hàng</h3>
+                    <div class="total-line">
+                        <span>Tạm tính:</span>
+                        <span th:text="'$' + ${subtotal}">$1750</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Phí vận chuyển:</span>
+                        <span>Miễn phí</span>
+                    </div>
+                    <div class="total-line total-final">
+                        <span>Tổng thanh toán:</span>
+                        <span th:text="'$' + ${subtotal}">$1750</span>
+                    </div>
+                    <a th:href="@{/checkout}" class="btn-primary btn-checkout">Tiến hành thanh toán</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

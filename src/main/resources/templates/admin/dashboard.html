@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" th:href="@{/css/admin.css}"> </head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-text">Cửa Hàng<br><span style="color: #000;">Điện Máy</span></span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="/admin" class="menu-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
+                <a href="/admin/products" class="menu-item"><i class="ph ph-box-cube"></i> Sản Phẩm</a>
+                <a href="/admin/orders" class="menu-item"><i class="ph ph-shopping-cart"></i> Đơn Hàng</a>
+                <a href="/admin/messages" class="menu-item"><i class="ph ph-chat-circle-dots"></i> Tin Nhắn</a>
+                
+                <div class="menu-divider">PAGES</div>
+                <a href="#" class="menu-item"><i class="ph ph-gear"></i> Setting</a>
+                <a href="#" class="menu-item"><i class="ph ph-user"></i> Tài Khoản</a>
+                <a href="#" class="menu-item text-danger"><i class="ph ph-sign-out"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <header class="topbar">
+                <div class="search-bar">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-btn"><i class="ph ph-bell"></i><span class="badge">3</span></button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563EB&color=fff" alt="Avatar">
+                        <div class="user-info">
+                            <span class="user-name">Moni Roy</span>
+                            <span class="user-role">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="dashboard-body">
+                <h1 class="page-title">Dashboard</h1>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <p class="stat-label">Total User</p>
+                            <h3 class="stat-value">40,689</h3>
+                            <p class="stat-trend trend-up"><i class="ph ph-trend-up"></i> 8.5% Up from yesterday</p>
+                        </div>
+                        <div class="stat-icon icon-purple"><i class="ph ph-users"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <p class="stat-label">Total Order</p>
+                            <h3 class="stat-value">10,293</h3>
+                            <p class="stat-trend trend-up"><i class="ph ph-trend-up"></i> 1.3% Up from past week</p>
+                        </div>
+                        <div class="stat-icon icon-orange"><i class="ph ph-package"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <p class="stat-label">Total Sales</p>
+                            <h3 class="stat-value">$89,000</h3>
+                            <p class="stat-trend trend-down"><i class="ph ph-trend-down"></i> 4.3% Down from yesterday</p>
+                        </div>
+                        <div class="stat-icon icon-green"><i class="ph ph-chart-line-up"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <p class="stat-label">Total Pending</p>
+                            <h3 class="stat-value">2040</h3>
+                            <p class="stat-trend trend-up"><i class="ph ph-trend-up"></i> 1.8% Up from yesterday</p>
+                        </div>
+                        <div class="stat-icon icon-red"><i class="ph ph-clock-counter-clockwise"></i></div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <div class="section-header">
+                        <h2>Sales Details</h2>
+                        <select class="filter-select"><option>October</option></select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="section-header">
+                        <h2>Deals Details</h2>
+                        <select class="filter-select"><option>October</option></select>
+                    </div>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Location</th>
+                                <th>Date - Time</th>
+                                <th>Piece</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <img src="https://placehold.co/40x40" alt="Apple Watch">
+                                        <span>Apple Watch</span>
+                                    </div>
+                                </td>
+                                <td>6096 Marjolaine Landing</td>
+                                <td>12.09.2023 - 12:53 PM</td>
+                                <td>423</td>
+                                <td>$34,295</td>
+                                <td><span class="badge-status status-delivered">Delivered</span></td>
+                            </tr>
+                            </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Tạo gradient màu xanh nhạt cho phần dưới đường line
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');   
+        gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['5k', '10k', '15k', '20k', '25k', '30k', '35k', '40k', '45k', '50k', '55k', '60k'],
+                datasets: [{
+                    label: 'Sales',
+                    data: [20, 40, 30, 70, 40, 60, 50, 90, 60, 80, 50, 70], // Dữ liệu giả lập
+                    borderColor: '#2563EB',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#2563EB',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4 // Làm cong đường line
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Wishlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <link rel="stylesheet" th:href="@{/css/wishlist.css}">
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container" style="padding-top: 40px; padding-bottom: 80px;">
+        
+        <div class="wishlist-header">
+            <h3>Wishlist (3)</h3>
+            <button class="btn-outline">Chuyển tất cả vào Giỏ hàng</button>
+        </div>
+
+        <div class="wishlist-grid">
+            <div th:each="p : ${wishlistItems}" class="product-card">
+                <div class="product-card__img-box">
+                    <span class="product-card__badge product-card__badge--sale" th:if="${p.containsKey('discount')}">
+                        -<span th:text="${p.get('discount')}"></span>%
+                    </span>
+                    <div class="product-card__actions">
+                        <button><i class="ph ph-trash"></i></button>
+                    </div>
+                    <img th:src="${p.img}" alt="Product">
+                    <button class="product-card__add-btn" style="transform: translateY(0); opacity: 1;">Thêm vào giỏ hàng</button>
+                </div>
+                <div class="product-card__info">
+                    <h3 th:text="${p.name}">Tên sản phẩm</h3>
+                    <div class="product-card__price">
+                        <span class="new" th:text="'$' + ${p.price}">$120</span>
+                        <span class="old" th:if="${p.containsKey('oldPrice')}" th:text="'$' + ${p.get('oldPrice')}">$160</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wishlist-header" style="margin-top: 80px;">
+            <div class="section-title-box" style="margin: 0;">
+                <span class="section-label">Dành cho bạn</span>
+            </div>
+            <button class="btn-outline">Xem tất cả</button>
+        </div>
+
+        <div class="wishlist-grid">
+            <div th:each="p : ${wishlistItems}" class="product-card">
+                <div class="product-card__img-box">
+                    <div class="product-card__actions">
+                        <button><i class="ph ph-eye"></i></button>
+                    </div>
+                    <img th:src="${p.img}" alt="Product">
+                    <button class="product-card__add-btn">Thêm vào giỏ hàng</button>
+                </div>
+                <div class="product-card__info">
+                    <h3 th:text="${p.name}">Tên sản phẩm</h3>
+                    <div class="product-card__price">
+                        <span class="new" th:text="'$' + ${p.price}">$120</span>
+                    </div>
+                    <div class="product-card__rating">
+                        <div class="stars">★★★★★</div>
+                        <span>(65)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

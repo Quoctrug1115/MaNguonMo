@@ -1,32 +1,70 @@
 package org.cuahangdienmay.cuahangdienmay_opensource.controller.admin;
 
-import java.util.List;
-import java.util.Map;
-
+import org.cuahangdienmay.cuahangdienmay_opensource.model.Product;
+import org.cuahangdienmay.cuahangdienmay_opensource.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
+import java.util.Map;
 @Controller
 @RequestMapping("/admin") // Mọi đường dẫn trong này đều bắt đầu bằng /admin
 public class AdminDashboardController {
+    @Autowired
+    private ProductRepository productRepository;
 
     @GetMapping({"", "/dashboard"})
     public String dashboard(Model model) {
-        model.addAttribute("title", "Dashboard - Admin Quản Trị");
-        return "admin/dashboard"; // Trỏ vào thư mục templates/admin/
+        model.addAttribute("title", "Dashboard - Admin");
+        return "admin/dashboard"; 
     }
     @GetMapping("/products")
     public String products(Model model) {
         model.addAttribute("title", "Quản lý Sản Phẩm - Admin");
-        // Giả lập dữ liệu Sản phẩm
-        model.addAttribute("products", List.of(
-            Map.of("id", "PRO-01", "name", "Apple Watch Series 8", "category", "Đồng hồ", "price", 399, "stock", 45, "img", "https://placehold.co/40x40"),
-            Map.of("id", "PRO-02", "name", "MacBook Pro M2", "category", "Laptop", "price", 1299, "stock", 12, "img", "https://placehold.co/40x40"),
-            Map.of("id", "PRO-03", "name", "Tai nghe AirPods Pro", "category", "Phụ kiện", "price", 249, "stock", 0, "img", "https://placehold.co/40x40") // Hết hàng
-        ));
+        // Quét dữ liệu thật từ Database
+        model.addAttribute("products", productRepository.findAll());
         return "admin/admin-products"; 
+    }
+
+    // CHỈ CÓ 1 HÀM GET NÀY CHO TRANG THÊM SẢN PHẨM
+    @GetMapping("/product-add")
+    public String addProductForm(Model model) {
+        model.addAttribute("title", "Thêm Sản Phẩm Mới - Admin");
+        model.addAttribute("product", new Product()); 
+        return "admin/admin-product-add"; 
+    }
+
+    @PostMapping("/product-add")
+    public String saveProduct(@ModelAttribute("product") Product product) {
+        if (product.getImg() == null || product.getImg().isEmpty()) {
+            product.setImg("https://placehold.co/400x400?text=No+Image");
+        }
+        productRepository.save(product);
+        return "redirect:/admin/products"; 
+    }
+
+    @GetMapping("/product-delete/{id}")
+    public String deleteProduct(@PathVariable("id") Long id) {
+        productRepository.deleteById(id);
+        return "redirect:/admin/products";
+    }
+
+    @GetMapping("/product-edit/{id}")
+    public String editProductForm(@PathVariable("id") Long id, Model model) {
+        // Tìm sản phẩm trong Database
+        Product product = productRepository.findById(id).orElse(new Product());
+        
+        model.addAttribute("title", "Cập nhật Sản Phẩm - Admin");
+        model.addAttribute("product", product); // Nhét dữ liệu cũ vào biến product
+        
+        // Tái sử dụng lại form Thêm Mới để hiển thị!
+        return "admin/admin-product-add";
     }
 
     @GetMapping("/orders")
@@ -40,12 +78,6 @@ public class AdminDashboardController {
             Map.of("id", "ORD-1004", "customer", "Hoàng Anh D", "date", "19/04/2026", "total", 1299, "status", "Cancelled")
         ));
         return "admin/admin-orders"; 
-    }
-
-    @GetMapping("/product-add")
-    public String addProduct(Model model) {
-        model.addAttribute("title", "Thêm Sản Phẩm Mới - Admin");
-        return "admin/admin-product-add"; 
     }
 
     @GetMapping("/customers")

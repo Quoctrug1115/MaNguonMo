@@ -272,10 +272,10 @@ body {
     display: flex;
     gap: 30px;
     align-items: flex-start;
+    width: 100%; /* Ép form bung đầy đủ chiều rộng */
 }
-
-.left-column { flex: 2; } /* Cột trái chiếm 2 phần */
-.right-column { flex: 1; } /* Cột phải chiếm 1 phần */
+.left-column { flex: 2; min-width: 0; }
+.right-column { flex: 1; min-width: 0; }
 
 .admin-card {
     background: #fff;

@@ -94,7 +94,7 @@
                     <h3 th:text="${p.name}">Tên sản phẩm</h3>
                     <div class="product-card__price">
                         <span class="new" th:text="'$' + ${p.price}">$120</span>
-                        <span class="old" th:text="'$' + ${p.oldPrice}">$160</span>
+                        <span class="old" th:if="${p.oldPrice != null}" th:text="'$' + ${p.oldPrice}"></span>
                     </div>
                     <div class="product-card__rating">
                         <div class="stars">★★★★★</div>
@@ -172,7 +172,7 @@
                     <h3 th:text="${p.name}">Tên sản phẩm</h3>
                     <div class="product-card__price">
                         <span class="new" th:text="'$' + ${p.price}">$260</span>
-                        <span class="old" th:if="${p.containsKey('oldPrice')}" th:text="'$' + ${p.get('oldPrice')}">$360</span>
+                        <span class="old" th:if="${p.oldPrice != null}" th:text="'$' + ${p.oldPrice}"></span>
                     </div>
                     <div class="product-card__rating">
                         <div class="stars">★★★★★</div>

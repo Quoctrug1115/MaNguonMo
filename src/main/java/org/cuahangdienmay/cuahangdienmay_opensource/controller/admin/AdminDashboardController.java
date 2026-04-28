@@ -41,4 +41,22 @@ public class AdminDashboardController {
         ));
         return "admin/admin-orders"; 
     }
+
+    @GetMapping("/product-add")
+    public String addProduct(Model model) {
+        model.addAttribute("title", "Thêm Sản Phẩm Mới - Admin");
+        return "admin/admin-product-add"; 
+    }
+
+    @GetMapping("/customers")
+    public String customers(Model model) {
+        model.addAttribute("title", "Quản lý Khách Hàng - Admin");
+        // Giả lập dữ liệu Khách hàng
+        model.addAttribute("customers", List.of(
+            Map.of("id", "CUS-001", "name", "Nguyễn Văn A", "email", "nva@gmail.com", "phone", "0901234567", "spent", 1500, "status", "Active"),
+            Map.of("id", "CUS-002", "name", "Trần Thị B", "email", "ttb@gmail.com", "phone", "0987654321", "spent", 320, "status", "Active"),
+            Map.of("id", "CUS-003", "name", "Lê Hacker", "email", "hacker@darkweb.com", "phone", "0123456789", "spent", 0, "status", "Blocked")
+        ));
+        return "admin/admin-customers"; 
+    }
 }

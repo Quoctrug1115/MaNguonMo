@@ -2,57 +2,195 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${title}">Tạo tài khoản</title>
+    <title th:text="${title}">Đăng ký - Cửa Hàng Điện Máy</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
+    
+    <!-- ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT ĐỂ CỨU HEADER: Nhúng file CSS gốc của bạn -->
+    <link rel="stylesheet" th:href="@{/css/style.css}"> 
     <link rel="stylesheet" th:href="@{/css/header.css}">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/auth.css}">
+
+    <style>
+        /* Đã xóa phần Reset CSS để không làm hỏng Header gốc của bạn */
+        body { background-color: #fff; }
+
+        /* MAIN AUTH LAYOUT */
+        .auth-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 40px auto;
+            min-height: 600px;
+            padding: 0 20px;
+        }
+
+        /* LEFT SIDE: IMAGE */
+        .auth-image-side {
+            flex: 1.1;
+            background-color: #C8E6E5; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-image-side img {
+            max-width: 90%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* RIGHT SIDE: FORM */
+        .auth-form-side {
+            flex: 0.9;
+            padding: 40px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-title { font-size: 36px; font-weight: 500; margin-bottom: 5px; color: #000; }
+        .auth-subtitle { font-size: 16px; color: #000; margin-bottom: 40px; }
+
+        /* FORM INPUTS */
+        .form-group { margin-bottom: 30px; position: relative; }
+        .form-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #9ca3af;
+            padding: 10px 0;
+            font-size: 15px;
+            outline: none;
+            background: transparent;
+            transition: border-color 0.3s;
+        }
+        .form-input::placeholder { color: #9ca3af; }
+        .form-input:focus { border-bottom-color: #3B82F6; }
+
+        /* BUTTONS */
+        .btn-primary {
+            width: 100%; background-color: #3B82F6; color: white; border: none;
+            padding: 15px; font-size: 16px; font-weight: 500; cursor: pointer;
+            margin-bottom: 15px; transition: 0.2s;
+        }
+        .btn-primary:hover { background-color: #2563EB; }
+
+        .btn-google {
+            width: 100%; background-color: white; color: #333; border: 1px solid #d1d5db;
+            padding: 14px; font-size: 15px; font-weight: 500; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            margin-bottom: 30px; transition: 0.2s;
+        }
+        .btn-google:hover { background-color: #f9fafb; }
+        .btn-google img { width: 20px; height: 20px; }
+
+        /* LINKS */
+        .auth-footer-link { text-align: center; font-size: 15px; color: #6b7280; }
+        .auth-footer-link a { color: #000; font-weight: 500; text-decoration: none; border-bottom: 1px solid #000; padding-bottom: 2px; }
+
+        /* ERROR MESSAGE */
+        .error-msg { color: #DC2626; font-size: 14px; margin-bottom: 20px; text-align: left; }
+
+        /* FOOTER SECTION */
+        .site-footer { background-color: #3B82F6; color: white; padding: 60px 20px; margin-top: 40px; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; }
+        .footer-col h4 { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        .footer-col p, .footer-col a { color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.8; text-decoration: none; display: block; }
+        .email-subscribe { display: flex; margin-top: 15px; border: 1px solid rgba(255,255,255,0.5); border-radius: 4px; padding: 2px; width: 250px; }
+        .email-subscribe input { background: transparent; border: none; color: white; padding: 10px; outline: none; flex: 1; }
+        .email-subscribe input::placeholder { color: rgba(255,255,255,0.7); }
+        .email-subscribe button { background: transparent; border: none; color: white; padding: 0 15px; cursor: pointer; font-size: 18px; }
+        .social-icons { display: flex; gap: 15px; margin-top: 10px; }
+        .social-icons a { color: white; font-size: 20px; }
+    </style>
 </head>
 <body>
-<div th:replace="~{fragments/header :: header}"></div>
 
-<main class="auth-page">
+    <!-- Nhúng Header của bạn -->
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <!-- MAIN FORM AREA -->
     <div class="auth-container">
-        <div class="auth-image-box">
-            <img th:src="@{/images/auth-bg.png}" alt="Shopping Mobile">
+        
+        <!-- Cột trái: Ảnh minh họa -->
+        <div class="auth-image-side">
+            <!-- Thay đường dẫn ảnh của bạn vào thuộc tính src dưới đây -->
+            <img src="https://placehold.co/600x600/C8E6E5/C8E6E5?text=Ảnh+Giỏ+Hàng+Của+Bạn" alt="Shopping Cart Illustration">
         </div>
 
-        <div class="auth-form-box">
+        <!-- Cột phải: Form nhập liệu -->
+        <div class="auth-form-side">
             <h1 class="auth-title">Tạo tài khoản</h1>
-            <p class="auth-subtitle">Điền thông tin của bạn</p>
+            <p class="auth-subtitle">Điền thông tin</p>
 
-            <form action="#" method="POST" class="auth-form">
+            <div class="error-msg" th:if="${error != null}" th:text="${error}"></div>
+
+            <form th:action="@{/register}" th:object="${user}" method="POST">
+                
                 <div class="form-group">
-                    <input type="text" id="fullname" placeholder="Họ và Tên" required>
+                    <input type="text" class="form-input" th:field="*{fullName}" placeholder="Họ và Tên" required>
                 </div>
 
                 <div class="form-group">
-                    <input type="text" id="username" placeholder="Email hoặc Số Điện Thoại" required>
+                    <input type="text" class="form-input" th:field="*{username}" placeholder="Tên đăng nhập (Viết liền không dấu)" required>
                 </div>
 
                 <div class="form-group">
-                    <input type="password" id="password" placeholder="Mật khẩu" required>
+                    <input type="email" class="form-input" th:field="*{email}" placeholder="Email hoặc Số Điện Thoại" required>
                 </div>
 
-                <div class="auth-actions-column">
-                    <button type="submit" class="btn-primary w-100">Tạo tài khoản</button>
-
-                    <button type="button" class="btn-google w-100">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo" class="google-icon">
-                        Sign up with Google
-                    </button>
+                <div class="form-group">
+                    <input type="password" class="form-input" th:field="*{password}" placeholder="Mật khẩu" required>
                 </div>
+
+                <button type="submit" class="btn-primary">Tạo tài khoản</button>
+                
+                <button type="button" class="btn-google">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+                    Sign up with Google
+                </button>
             </form>
 
-            <div class="auth-footer text-center" style="margin-top: 30px;">
-                <p>Bạn đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+            <div class="auth-footer-link">
+                Đã có tài khoản? <a href="/login">Đăng nhập</a>
             </div>
         </div>
     </div>
-</main>
+
+    <!-- FOOTER XANH ĐỒNG BỘ THIẾT KẾ -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-col" style="flex: 1.5; min-width: 250px;">
+                <h4>Cửa Hàng Điện Máy</h4>
+                <p style="margin-bottom: 10px;">Get 10% off your first order</p>
+                <form class="email-subscribe">
+                    <input type="email" placeholder="Enter your email">
+                    <button type="button"><i class="ph ph-paper-plane-right"></i></button>
+                </form>
+            </div>
+            
+            <div class="footer-col" style="flex: 1; min-width: 200px;">
+                <p style="font-weight: 600; margin-bottom: 15px; font-size: 16px;">Hỗ trợ</p>
+                <p>688 Lê Trọng Tấn, Tân<br>Phú, TP.Hồ Chí Minh</p>
+                <p style="margin-top: 15px;">cuahangdienmay@gmail.com</p>
+                <p style="margin-top: 15px;">+88015-88888-9999</p>
+            </div>
+            
+            <div class="footer-col" style="flex: 1; min-width: 150px;">
+                <p style="font-weight: 600; margin-bottom: 15px; font-size: 16px;">Quick Link</p>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms Of Use</a>
+                <a href="#">FAQ</a>
+                <a href="#">Contact</a>
+            </div>
+            
+            <div class="footer-col" style="flex: 0.5; min-width: 120px;">
+                <div class="social-icons">
+                    <a href="#"><i class="ph ph-facebook-logo"></i></a>
+                    <a href="#"><i class="ph ph-twitter-logo"></i></a>
+                    <a href="#"><i class="ph ph-instagram-logo"></i></a>
+                    <a href="#"><i class="ph ph-linkedin-logo"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
 </body>
 </html>

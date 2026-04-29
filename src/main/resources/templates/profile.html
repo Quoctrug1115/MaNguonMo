@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">Hồ sơ cá nhân</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <style>
+        .profile-container { max-width: 600px; margin: 60px auto; padding: 30px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
+        .profile-avatar { width: 100px; height: 100px; background: #3B82F6; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 40px; margin: 0 auto 20px; }
+        .profile-info { margin-bottom: 15px; font-size: 16px; color: #4B5563; text-align: left; padding: 10px 20px; border-bottom: 1px solid #E5E7EB; }
+        .profile-info strong { color: #111827; display: inline-block; width: 120px; }
+        .btn-logout { display: inline-block; margin-top: 20px; padding: 10px 25px; background: #DC2626; color: white; border-radius: 6px; text-decoration: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="profile-container">
+        <div class="profile-avatar">
+            <i class="ph ph-user"></i>
+        </div>
+        <h2 style="margin-bottom: 30px; color: #111827;" th:text="'Xin chào, ' + ${user.fullName}">Xin chào!</h2>
+        
+        <div class="profile-info">
+            <strong>Họ và tên:</strong> <span th:text="${user.fullName}"></span>
+        </div>
+        <div class="profile-info">
+            <strong>Tên đăng nhập:</strong> <span th:text="${user.username}"></span>
+        </div>
+        <div class="profile-info">
+            <strong>Email:</strong> <span th:text="${user.email}"></span>
+        </div>
+        <div class="profile-info">
+            <strong>Quyền hạn:</strong> <span th:text="${user.role}"></span>
+        </div>
+
+        <a href="/logout" class="btn-logout">Đăng xuất khỏi thiết bị</a>
+    </div>
+
+</body>
+</html>

@@ -9,7 +9,18 @@
             <a href="/" class="header__nav-link header__nav-link--active">Trang chủ</a>
             <a href="/contact" class="header__nav-link">Liên hệ</a>
             <a href="/products" class="header__nav-link">Cửa hàng</a>
-            <a href="/login" class="header__nav-link">Đăng nhập</a>
+            
+            <!-- ĐÂY LÀ KHU VỰC ĐÃ ĐƯỢC NÂNG CẤP -->
+            
+            <!-- 1. NẾU CHƯA ĐĂNG NHẬP (Session rỗng): Chỉ hiện nút Đăng nhập -->
+            <a th:if="${session.loggedInUser == null}" href="/login" class="header__nav-link">Đăng nhập</a>
+
+            <!-- 2. NẾU ĐÃ ĐĂNG NHẬP (Có Session): Hiện tên User và nút Đăng xuất -->
+            <th:block th:if="${session.loggedInUser != null}">
+                <a href="/profile" class="header__nav-link" style="color: #2563EB; font-weight: 600;" th:text="'Chào, ' + ${session.loggedInUser.fullName}">Chào, Khách</a>
+                <a href="/logout" class="header__nav-link" style="color: #DC2626;">Đăng xuất</a>
+            </th:block>
+            
         </nav>
 
         <div class="header__actions">
@@ -21,15 +32,14 @@
             <div class="header__icons">
                 <a href="#" class="header__icon-btn"><i class="ph ph-heart"></i></a>
                 
-                <!-- BẮT ĐẦU: KHU VỰC GIỎ HÀNG ĐÃ ĐƯỢC NÂNG CẤP -->
                 <a href="/cart" class="header__icon-btn">
                     <i class="ph ph-shopping-cart"></i>
-                    <!-- Chỉ hiện chấm đỏ khi có đồ trong giỏ (>0), và in ra đúng con số đó -->
+                    <!-- Chấm đỏ báo số lượng giỏ hàng -->
                     <span class="header__cart-badge" th:if="${cartItemCount != null and cartItemCount > 0}" th:text="${cartItemCount}">0</span>
                 </a>
-                <!-- KẾT THÚC -->
-
-                <a href="/profile" class="header__icon-btn"><i class="ph ph-user"></i></a>
+                
+                <!-- Icon User: Bấm vào sẽ tự động biết đi đến Profile hay Login -->
+                <a th:href="${session.loggedInUser != null ? '/profile' : '/login'}" class="header__icon-btn"><i class="ph ph-user"></i></a>
             </div>
         </div>
     </div>

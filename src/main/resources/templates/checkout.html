@@ -2,113 +2,83 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${title}">Thanh toán</title>
+    <title th:text="${title}">Thanh toán - Cửa Hàng Điện Máy</title>
+    <!-- Tái sử dụng CSS của trang chủ và import font/icon -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
-    <link rel="stylesheet" th:href="@{/css/header.css}">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/checkout.css}"> </head>
+    <link rel="stylesheet" th:href="@{/css/style.css}"> <!-- Hoặc tên file CSS dùng chung của bạn -->
+    <style>
+        .checkout-layout { display: flex; gap: 40px; max-width: 1200px; margin: 40px auto; padding: 0 20px; align-items: flex-start; }
+        .checkout-form-section { flex: 2; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .checkout-summary-section { flex: 1; background: #F9FAFB; padding: 30px; border-radius: 8px; position: sticky; top: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #374151; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 6px; outline: none; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #2563EB; }
+        .summary-item { display: flex; justify-content: space-between; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #E5E7EB; }
+        .summary-item-info { display: flex; gap: 15px; align-items: center; }
+        .summary-item-info img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; }
+        .btn-place-order { width: 100%; padding: 15px; background: #2563EB; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+        .btn-place-order:hover { background: #1D4ED8; }
+    </style>
+</head>
 <body>
-    <div th:replace="~{fragments/header :: header}"></div>
 
-    <main class="container" style="padding-top: 40px; padding-bottom: 80px;">
-        <div class="breadcrumb">
-            <a href="/">Account</a> <span class="separator">/</span> 
-            <a href="#">My Account</a> <span class="separator">/</span> 
-            <a href="/cart">Giỏ hàng</a> <span class="separator">/</span> 
-            <span class="current">Thanh toán</span>
+    <!-- Nhúng Header dùng chung -->
+    <div th:replace="~{header :: header}"></div>
+
+    <div class="checkout-layout">
+        
+        <!-- Cột trái: Form điền thông tin giao hàng -->
+        <div class="checkout-form-section">
+            <h2 style="margin-bottom: 25px; border-bottom: 2px solid #2563EB; padding-bottom: 10px; display: inline-block;">Thông tin giao hàng</h2>
+            
+            <!-- Form này sẽ gửi POST về hàm processCheckout trong CartController -->
+            <form th:action="@{/checkout/process}" method="POST">
+                <div class="form-group">
+                    <label>Họ và tên người nhận <span style="color: red;">*</span></label>
+                    <input type="text" name="customerName" placeholder="Ví dụ: Nguyễn Văn A" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Số điện thoại liên hệ <span style="color: red;">*</span></label>
+                    <input type="tel" name="customerPhone" placeholder="Ví dụ: 0901234567" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Địa chỉ nhận hàng chi tiết <span style="color: red;">*</span></label>
+                    <textarea name="customerAddress" rows="4" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-place-order">XÁC NHẬN ĐẶT HÀNG</button>
+            </form>
         </div>
 
-        <h1 class="checkout-title">Chi tiết hóa đơn</h1>
-
-        <form action="#" method="POST" class="checkout-wrapper">
+        <!-- Cột phải: Tóm tắt đơn hàng (quét từ Session) -->
+        <div class="checkout-summary-section">
+            <h2 style="margin-bottom: 20px; font-size: 20px;">Đơn hàng của bạn</h2>
             
-            <div class="billing-details">
-                <div class="form-group">
-                    <label>Họ và Tên <span class="required">*</span></label>
-                    <input type="text" class="form-control" required>
+            <div class="summary-item" th:each="item : ${cartItems}">
+                <div class="summary-item-info">
+                    <img th:src="${item.img}" alt="product">
+                    <div>
+                        <div style="font-weight: 500; color: #111827;" th:text="${item.name}">Tên SP</div>
+                        <div style="color: #6B7280; font-size: 14px;" th:text="'Số lượng: ' + ${item.quantity}">Số lượng: 1</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Tên công ty (Tùy chọn)</label>
-                    <input type="text" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Địa chỉ <span class="required">*</span></label>
-                    <input type="text" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Thành phố <span class="required">*</span></label>
-                    <input type="text" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Số điện thoại <span class="required">*</span></label>
-                    <input type="tel" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Email <span class="required">*</span></label>
-                    <input type="email" class="form-control" required>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="save-info">
-                    <label for="save-info">Lưu thông tin này cho lần thanh toán sau</label>
-                </div>
+                <div style="font-weight: 600;" th:text="'$' + (${item.price * item.quantity})">$100</div>
             </div>
 
-            <div class="order-summary">
-                
-                <div class="summary-items">
-                    <div th:each="item : ${checkoutItems}" class="summary-item">
-                        <div class="summary-item-info">
-                            <img th:src="${item.img}" alt="Product">
-                            <span th:text="${item.name}">Tên sản phẩm</span>
-                        </div>
-                        <span th:text="'$' + ${item.price}">$650</span>
-                    </div>
-                </div>
-
-                <div class="summary-totals">
-                    <div class="total-line">
-                        <span>Tạm tính:</span>
-                        <span th:text="'$' + ${total}">$1750</span>
-                    </div>
-                    <div class="total-line">
-                        <span>Phí vận chuyển:</span>
-                        <span>Miễn phí</span>
-                    </div>
-                    <div class="total-line total-final">
-                        <span>Tổng thanh toán:</span>
-                        <span th:text="'$' + ${total}">$1750</span>
-                    </div>
-                </div>
-
-                <div class="payment-methods">
-                    <div class="payment-option">
-                        <input type="radio" id="bank" name="payment" value="bank" checked>
-                        <label for="bank" class="bank-label">
-                            Chuyển khoản ngân hàng 
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" class="card-icon">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" class="card-icon">
-                        </label>
-                    </div>
-                    <div class="payment-option">
-                        <input type="radio" id="cod" name="payment" value="cod">
-                        <label for="cod">Thanh toán khi nhận hàng (COD)</label>
-                    </div>
-                </div>
-
-                <div class="coupon-box" style="margin-bottom: 24px;">
-                    <input type="text" placeholder="Mã giảm giá">
-                    <button type="button" class="btn-primary">Áp dụng</button>
-                </div>
-
-                <button type="submit" class="btn-primary btn-place-order">Xác nhận đặt hàng</button>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 22px; font-weight: 700; color: #111827;">
+                <span>Tổng thanh toán:</span>
+                <span th:text="'$' + ${total}">$0.00</span>
             </div>
-        </form>
-    </main>
+            <p style="font-size: 13px; color: #6B7280; margin-top: 15px; text-align: center;">
+                Bằng việc đặt hàng, bạn đồng ý với Điều khoản sử dụng của chúng tôi.
+            </p>
+        </div>
 
-    <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+
 </body>
 </html>

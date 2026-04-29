@@ -88,7 +88,9 @@
                         <button><i class="ph ph-heart"></i></button>
                         <button><i class="ph ph-eye"></i></button>
                     </div>
-                    <button class="product-card__add-btn">Thêm vào giỏ hàng</button>
+                    <form th:action="@{'/cart/add/' + ${p.id}}" method="POST" style="width: 100%; margin: 0; padding: 0;">
+                        <button type="submit" class="product-card__add-btn" style="width: 100%;">Thêm vào giỏ hàng</button>
+                    </form>
                 </div>
                 <div class="product-card__info">
                     <h3 th:text="${p.name}">Tên sản phẩm</h3>

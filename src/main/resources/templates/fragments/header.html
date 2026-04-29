@@ -8,7 +8,7 @@
         <nav class="header__nav">
             <a href="/" class="header__nav-link header__nav-link--active">Trang chủ</a>
             <a href="/contact" class="header__nav-link">Liên hệ</a>
-            <a href="/products" class="header__nav-link">Cửa hàng</a>.
+            <a href="/products" class="header__nav-link">Cửa hàng</a>
             <a href="/login" class="header__nav-link">Đăng nhập</a>
         </nav>
 
@@ -20,10 +20,15 @@
 
             <div class="header__icons">
                 <a href="#" class="header__icon-btn"><i class="ph ph-heart"></i></a>
+                
+                <!-- BẮT ĐẦU: KHU VỰC GIỎ HÀNG ĐÃ ĐƯỢC NÂNG CẤP -->
                 <a href="/cart" class="header__icon-btn">
                     <i class="ph ph-shopping-cart"></i>
-                    <span class="header__cart-badge">2</span>
+                    <!-- Chỉ hiện chấm đỏ khi có đồ trong giỏ (>0), và in ra đúng con số đó -->
+                    <span class="header__cart-badge" th:if="${cartItemCount != null and cartItemCount > 0}" th:text="${cartItemCount}">0</span>
                 </a>
+                <!-- KẾT THÚC -->
+
                 <a href="/profile" class="header__icon-btn"><i class="ph ph-user"></i></a>
             </div>
         </div>

@@ -30,17 +30,21 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr th:if="${cartItems == null or cartItems.isEmpty()}">
+                        <td colspan="4" style="text-align: center; padding: 40px;">Giỏ hàng của bạn đang trống!</td>
+                    </tr>
+
                     <tr th:each="item : ${cartItems}">
                         <td class="cart-product-info">
-                            <button class="remove-item-btn"><i class="ph ph-x-circle"></i></button>
+                            <a th:href="@{'/cart/remove/' + ${item.productId}}" class="remove-item-btn"><i class="ph ph-x-circle"></i></a>
                             <img th:src="${item.img}" alt="Product">
                             <span th:text="${item.name}">Tên sản phẩm</span>
                         </td>
                         <td th:text="'$' + ${item.price}">$650</td>
                         <td>
-                            <div class="cart-qty-selector">
-                                <input type="number" th:value="${item.quantity}" min="1" class="qty-input-box">
-                            </div>
+                            <form th:action="@{'/cart/update/' + ${item.productId}}" method="POST" style="margin: 0;">
+                                <input type="number" name="quantity" th:value="${item.quantity}" min="0" class="qty-input-box" onchange="this.form.submit()">
+                            </form>
                         </td>
                         <td th:text="'$' + (${item.price} * ${item.quantity})">$650</td>
                     </tr>
@@ -48,8 +52,11 @@
             </table>
 
             <div class="cart-actions-row">
-                <a th:href="@{/products}" class="btn-outline">Trở về cửa hàng</a>
-                <button class="btn-outline">Cập nhật giỏ hàng</button>
+                <a th:href="@{/products}" class="btn-outline">Tiếp tục mua sắm</a>
+                
+                <a th:href="@{/cart/clear}" class="btn-outline" style="color: #EF4444; border-color: #EF4444;" onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?');">
+                    Xóa toàn bộ giỏ hàng
+                </a>
             </div>
 
             <div class="cart-bottom-row">
@@ -58,21 +65,19 @@
                     <button class="btn-primary">Áp dụng</button>
                 </div>
 
-                <div class="cart-total-box">
-                    <h3>Tổng tiền giỏ hàng</h3>
-                    <div class="total-line">
-                        <span>Tạm tính:</span>
-                        <span th:text="'$' + ${subtotal}">$1750</span>
+                <div class="cart-summary">
+                    <h3>Tổng cộng</h3>
+                    <div class="summary-row">
+                        <span>Tạm tính</span>
+                        <span th:text="'$' + ${subtotal}">$0.00</span>
                     </div>
-                    <div class="total-line">
-                        <span>Phí vận chuyển:</span>
-                        <span>Miễn phí</span>
+                    <div class="summary-row total-row">
+                        <span>Thành tiền</span>
+                        <span th:text="'$' + ${subtotal}">$0.00</span>
                     </div>
-                    <div class="total-line total-final">
-                        <span>Tổng thanh toán:</span>
-                        <span th:text="'$' + ${subtotal}">$1750</span>
-                    </div>
-                    <a th:href="@{/checkout}" class="btn-primary btn-checkout">Tiến hành thanh toán</a>
+                    
+                    <!-- Sửa đường dẫn ở đây -->
+                    <a th:href="@{/checkout}" class="btn-primary" style="width: 100%; display: block; text-align: center;">Tiến hành Thanh toán</a>
                 </div>
             </div>
         </div>

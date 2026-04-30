@@ -156,9 +156,9 @@ const decreaseQuantity = (item) => {
         </div>
 
         <div class="mt-4 flex justify-center">
-          <button class="bg-primary text-white px-8 py-3 rounded text-sm font-medium hover:bg-blue-600 transition">
+          <router-link to="/checkout" class="bg-primary text-white px-8 py-3 rounded text-sm font-medium hover:bg-blue-600 transition">
             Đi Đến Thanh Toán
-          </button>
+          </router-link>
         </div>
       </div>
 

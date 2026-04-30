@@ -25,6 +25,16 @@ const router = createRouter({
       path: '/forgot-password',
       name: 'forgot-password',
       component: () => import('../views/ForgotPasswordView.vue')
+    },
+    {
+      path: '/wishlist',
+      name: 'wishlist',
+      component: () => import('../views/WishlistView.vue')
+    },
+    {
+      path: '/cart',
+      name: 'cart',
+      component: () => import('../views/CartView.vue')
     }
   ]
 })

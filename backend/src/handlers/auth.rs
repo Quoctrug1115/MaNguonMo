@@ -5,6 +5,8 @@ use sqlx::PgPool;
 use std::env;
 use jsonwebtoken::{encode, Header, EncodingKey};
 use chrono::{Utc, Duration};
+use axum::response::IntoResponse;
+use uuid::Uuid;
 
 use crate::models::user::{RegisterRequest, LoginRequest, Claims, User};
 
@@ -141,4 +143,64 @@ pub async fn login(
             }
         })),
     )
+}
+
+// API Lấy thông tin Profile (Được bảo vệ bởi Extractor Claims)
+// SỬA LẠI: Trả về trực tiếp (StatusCode, Json<Value>) cho đồng bộ với register và login
+pub async fn get_my_profile(
+    claims: Claims,
+    State(pool): State<PgPool>,
+) -> (StatusCode, Json<Value>) {
+
+    // 1. Chuyển ID từ dạng Chuỗi sang dạng UUID để query Database
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "ID người dùng không hợp lệ" })),
+            );
+        }
+    };
+
+    // 2. Lấy thông tin mới nhất của User từ Database
+    let user_result = sqlx::query_as!(
+        User,
+        "SELECT id, full_name, email, password_hash, phone, address, role, created_at, updated_at FROM users WHERE id = $1",
+        user_id
+    )
+        .fetch_optional(&pool)
+        .await;
+
+    // 3. Trả kết quả về cho Frontend (Bỏ hết các đuôi .into_response() rườm rà)
+    match user_result {
+        Ok(Some(user)) => (
+            StatusCode::OK,
+            Json(json!({
+                "message": "Lấy thông tin thành công!",
+                "user": {
+                    "id": user.id,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "address": user.address,
+                    "role": user.role,
+                    "created_at": user.created_at
+                }
+            })),
+        ),
+
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Không tìm thấy tài khoản người dùng này trong hệ thống" })),
+        ),
+
+        Err(e) => {
+            tracing::error!("Lỗi DB khi lấy profile: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Lỗi hệ thống khi lấy thông tin" })),
+            )
+        }
+    }
 }

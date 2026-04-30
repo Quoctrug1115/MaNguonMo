@@ -42,8 +42,8 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/api/auth/register", post(handlers::auth::register))
-        // Thêm route Login vào đây:
         .route("/api/auth/login", post(handlers::auth::login))
+        .route("/api/users/me", get(handlers::auth::get_my_profile))
         .layer(cors)
         .with_state(pool);
 

@@ -36,8 +36,8 @@ const handleLogout = () => {
       <!-- Navigation Links -->
       <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
         <router-link to="/" class="hover:text-primary transition">Trang chủ</router-link>
-        <a href="#" class="hover:text-primary transition">Liên hệ</a>
-        <a href="#" class="hover:text-primary transition">Về chúng tôi</a>
+        <router-link to="/contact" class="hover:text-primary transition">Liên hệ</router-link>
+        <router-link to="/about" class="hover:text-primary transition">Về chúng tôi</router-link>
         
         <!-- Xử lý logic Đăng nhập / Hiển thị tên -->
         <router-link v-if="!isLoggedIn" to="/login" class="hover:text-primary transition">
@@ -105,10 +105,10 @@ const handleLogout = () => {
               v-show="isAccountMenuOpen" 
               class="absolute right-0 top-full mt-3 w-56 bg-[rgba(15,15,15,0.95)] backdrop-blur-md text-gray-200 rounded-lg shadow-2xl py-2 border border-gray-800 z-50 overflow-hidden"
             >
-              <a href="#" class="flex items-center gap-3 px-5 py-3 hover:bg-white/10 hover:text-white transition-colors text-sm font-light">
+              <router-link to="/account" class="flex items-center gap-3 px-5 py-3 hover:bg-white/10 hover:text-white transition-colors text-sm font-light">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 Quản lý tài khoản
-              </a>
+              </router-link>
               <a href="#" class="flex items-center gap-3 px-5 py-3 hover:bg-white/10 hover:text-white transition-colors text-sm font-light">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                 Đơn hàng của tôi

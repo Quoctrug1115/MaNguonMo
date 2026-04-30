@@ -40,6 +40,33 @@ const router = createRouter({
       path: '/checkout',
       name: 'checkout',
       component: () => import('../views/CheckoutView.vue')
+    },
+    {
+      path: '/account',
+      name: 'account',
+      component: () => import('../views/AccountView.vue')
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: () => import('../views/AboutView.vue')
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: () => import('../views/ContactView.vue')
+    },
+    {
+      // Sử dụng tham số động :id để biết người dùng đang xem sản phẩm nào
+      path: '/product/:id',
+      name: 'product-detail',
+      component: () => import('../views/ProductDetailView.vue')
+    },
+    {
+      // Cú pháp catch-all của Vue Router 4
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue')
     }
   ]
 })

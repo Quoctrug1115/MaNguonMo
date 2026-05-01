@@ -3,6 +3,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use serde::Serialize;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
@@ -144,26 +145,76 @@ pub async fn create_product(
     }
 }
 
+#[derive(Serialize)]
+pub struct ProductSpec {
+    pub spec_key: String,
+    pub spec_value: String,
+}
+
+#[derive(Serialize)]
+pub struct ProductReview {
+    pub id: uuid::Uuid,
+    pub user_name: String,
+    pub rating: i32,
+    pub content: Option<String>,
+    pub is_verified: Option<bool>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
 pub async fn get_product_by_id(
     State(pool): State<PgPool>,
-    Path(id): Path<uuid::Uuid>, // Lấy ID (chuẩn UUID) từ URL
+    Path(id): Path<uuid::Uuid>,
 ) -> (StatusCode, Json<Value>) {
 
+    // 1. Lấy thông tin cơ bản của sản phẩm (Y hệt cũ)
     let product_result = sqlx::query_as!(
         Product,
         "SELECT id, category_id, name, description, price, original_price, discount_percent, stock_quantity, image_url, is_new, rating, reviews_count, created_at, updated_at
-         FROM products
-         WHERE id = $1",
+         FROM products WHERE id = $1",
         id
     )
         .fetch_optional(&pool)
         .await;
 
     match product_result {
-        Ok(Some(product)) => (
-            StatusCode::OK,
-            Json(json!({ "data": product })),
-        ),
+        Ok(Some(product)) => {
+            // 2. [LẤY DỮ LIỆU THẬT MỚI] Lấy danh sách Thông số kỹ thuật
+            let specs_result = sqlx::query_as!(
+                ProductSpec,
+                "SELECT spec_key, spec_value FROM product_specifications WHERE product_id = $1 ORDER BY created_at",
+                id
+            )
+                .fetch_all(&pool)
+                .await;
+
+            let specs = specs_result.unwrap_or_default(); // Nếu lỗi thì trả về mảng rỗng
+
+            // 3. [LẤY DỮ LIỆU THẬT MỚI] Lấy danh sách Đánh giá
+            let reviews_result = sqlx::query_as!(
+                    ProductReview,
+                    "SELECT id, user_name, rating, content, is_verified, created_at
+                     FROM product_reviews
+                     WHERE product_id = $1::uuid
+                     ORDER BY created_at DESC",
+                    id
+                )
+                .fetch_all(&pool)
+                .await;
+
+            let reviews = reviews_result.unwrap_or_default();
+
+            // 4. Gom tất cả dữ liệu lại và trả về cho Frontend
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "data": {
+                        "product": product,
+                        "specifications": specs,
+                        "reviews": reviews
+                    }
+                })),
+            )
+        },
         Ok(None) => (
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "Sản phẩm không tồn tại" })),

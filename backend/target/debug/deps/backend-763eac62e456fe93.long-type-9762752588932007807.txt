@@ -1,2 +1,0 @@
-fn({type error}, axum::extract::State<Pool<Postgres>>, axum::Json<{type error}>) -> impl std::future::Future<Output = (axum::http::StatusCode, axum::Json<JsonValue>)> {create_product}
-fn({type error}, axum::extract::State<Pool<Postgres>>, axum::Json<{type error}>) -> impl std::future::Future<Output = (axum::http::StatusCode, axum::Json<JsonValue>)> {create_product}: Handler<_, _>

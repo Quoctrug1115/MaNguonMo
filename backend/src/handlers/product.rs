@@ -1,48 +1,69 @@
-use axum::{extract::{State, Query}, http::StatusCode, Json};
-use serde::{Deserialize, Serialize};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 
-use crate::models::product::Product;
+// Import các "Khuôn mẫu" dữ liệu từ thư mục models
+use crate::models::product::{CreateProductRequest, Product};
+use crate::models::user::Claims; // Import "Anh bảo vệ"
 
-// Struct hứng tham số trên URL (Ví dụ: ?page=2&limit=10)
+// 1. Thêm trường category vào để hứng dữ liệu từ Frontend
 #[derive(Debug, Deserialize)]
 pub struct PaginationQuery {
     pub page: Option<i64>,
     pub limit: Option<i64>,
+    pub category: Option<String>,
 }
 
-// API Lấy danh sách sản phẩm (Có phân trang)
+// ==============================================================
+// API Lấy danh sách sản phẩm (Public - Có phân trang & Lọc Category)
+// ==============================================================
 pub async fn get_products(
     State(pool): State<PgPool>,
-    Query(query): Query<PaginationQuery>, // Bắt tham số từ URL
+    Query(query): Query<PaginationQuery>,
 ) -> (StatusCode, Json<Value>) {
 
-    // 1. Cài đặt giá trị mặc định: Nếu Frontend không gửi, lấy trang 1, mỗi trang 12 sản phẩm
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(12);
-
-    // Công thức tính số dòng cần bỏ qua (OFFSET)
     let offset = (page - 1) * limit;
 
-    // 2. Đếm tổng số sản phẩm trong kho để tính tổng số trang
-    let count_result = sqlx::query!("SELECT COUNT(*) as count FROM products")
+    // 1. FIX LỖI MOVE: Biến Option<String> thành Option<&str> để xài được nhiều lần
+    let category_filter = query.category.as_deref();
+
+    // 2. Đếm số lượng sản phẩm
+    let count_result = sqlx::query!(
+        r#"
+        SELECT COUNT(*) as count
+        FROM products
+        -- FIX LỖI ÉP KIỂU: Thêm ::varchar vào đuôi $1
+        WHERE $1::varchar IS NULL OR category_id = (SELECT id FROM categories WHERE slug = $1::varchar LIMIT 1)
+        "#,
+        category_filter // Dùng lần 1
+    )
         .fetch_one(&pool)
         .await;
 
     let total_items = count_result.unwrap().count.unwrap_or(0);
-    // Tính tổng số trang (làm tròn lên)
     let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
 
-    // 3. Lấy dữ liệu có LIMIT và OFFSET
+    // 3. Lấy dữ liệu sản phẩm
     let products_result = sqlx::query_as!(
         Product,
-        "SELECT id, category_id, name, description, price, original_price, discount_percent, stock_quantity, image_url, is_new, rating, reviews_count, created_at, updated_at
-         FROM products
-         ORDER BY created_at DESC
-         LIMIT $1 OFFSET $2",
+        r#"
+        SELECT id, category_id, name, description, price, original_price, discount_percent, stock_quantity, image_url, is_new, rating, reviews_count, created_at, updated_at
+        FROM products
+        -- FIX LỖI ÉP KIỂU: Thêm ::varchar vào đuôi $3
+        WHERE $3::varchar IS NULL OR category_id = (SELECT id FROM categories WHERE slug = $3::varchar LIMIT 1)
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+        "#,
         limit,
-        offset
+        offset,
+        category_filter // Dùng lần 2 thoải mái không bị lỗi
     )
         .fetch_all(&pool)
         .await;
@@ -53,7 +74,6 @@ pub async fn get_products(
             Json(json!({
                 "message": "Lấy danh sách sản phẩm thành công",
                 "data": products,
-                // Trả thêm thông tin phân trang cho Vue biết đường mà vẽ nút
                 "pagination": {
                     "current_page": page,
                     "limit": limit,
@@ -69,14 +89,15 @@ pub async fn get_products(
     }
 }
 
-// API Thêm sản phẩm mới (Được bảo vệ bởi Extractor Claims)
+// ==============================================================
+// 2. API Thêm sản phẩm mới (Private - Bắt buộc có thẻ Claims)
+// ==============================================================
 pub async fn create_product(
-    claims: Claims, // <--- Bắt buộc phải có thẻ thông hành (Token) hợp lệ mới chạy vào đây
+    claims: Claims,
     State(pool): State<PgPool>,
     Json(payload): Json<CreateProductRequest>,
 ) -> (StatusCode, Json<Value>) {
 
-    // Thực thi câu lệnh chèn vào CSDL và hứng lại kết quả vừa tạo (RETURNING)
     let insert_result = sqlx::query_as!(
         Product,
         r#"
@@ -105,11 +126,11 @@ pub async fn create_product(
 
     match insert_result {
         Ok(new_product) => (
-            StatusCode::CREATED, // Code 201: Đã tạo thành công
+            StatusCode::CREATED,
             Json(json!({
                 "message": "Thêm sản phẩm thành công!",
                 "product": new_product,
-                "added_by": claims.email // In ra email của người vừa thêm (để chứng minh Extractor hoạt động)
+                "added_by": claims.email
             })),
         ),
         Err(e) => {

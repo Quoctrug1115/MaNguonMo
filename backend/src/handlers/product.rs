@@ -6,6 +6,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
+use axum::extract::Path;
 
 // Import các "Khuôn mẫu" dữ liệu từ thư mục models
 use crate::models::product::{CreateProductRequest, Product};
@@ -139,6 +140,37 @@ pub async fn create_product(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Không thể lưu sản phẩm vào kho" })),
             )
+        }
+    }
+}
+
+pub async fn get_product_by_id(
+    State(pool): State<PgPool>,
+    Path(id): Path<uuid::Uuid>, // Lấy ID (chuẩn UUID) từ URL
+) -> (StatusCode, Json<Value>) {
+
+    let product_result = sqlx::query_as!(
+        Product,
+        "SELECT id, category_id, name, description, price, original_price, discount_percent, stock_quantity, image_url, is_new, rating, reviews_count, created_at, updated_at
+         FROM products
+         WHERE id = $1",
+        id
+    )
+        .fetch_optional(&pool)
+        .await;
+
+    match product_result {
+        Ok(Some(product)) => (
+            StatusCode::OK,
+            Json(json!({ "data": product })),
+        ),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Sản phẩm không tồn tại" })),
+        ),
+        Err(e) => {
+            tracing::error!("Lỗi DB: {:?}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Lỗi hệ thống" })))
         }
     }
 }

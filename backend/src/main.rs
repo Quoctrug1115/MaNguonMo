@@ -4,6 +4,7 @@ use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tower_http::services::ServeDir;
 
 // Import thêm thư viện CORS
 use tower_http::cors::{Any, CorsLayer};
@@ -44,6 +45,9 @@ async fn main() {
         .route("/api/auth/register", post(handlers::auth::register))
         .route("/api/auth/login", post(handlers::auth::login))
         .route("/api/users/me", get(handlers::auth::get_my_profile))
+        .route("/api/products", get(handlers::product::get_products))
+        .route("/api/products", post(handlers::product::create_product))
+        .nest_service("/images", ServeDir::new("../images_product"))
         .layer(cors)
         .with_state(pool);
 

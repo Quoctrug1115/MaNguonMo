@@ -7,6 +7,7 @@ use jsonwebtoken::{encode, Header, EncodingKey};
 use chrono::{Utc, Duration};
 use axum::response::IntoResponse;
 use uuid::Uuid;
+use serde::{Deserialize, Serialize, ser};
 
 use crate::models::user::{RegisterRequest, LoginRequest, Claims, User};
 
@@ -65,10 +66,12 @@ pub async fn register(
         }
     }
 }
+
+
 pub async fn login(
     State(pool): State<PgPool>,
     Json(payload): Json<LoginRequest>,
-) -> (StatusCode, Json<Value>) {
+) -> Result<axum::Json<serde_json::Value>, (axum::http::StatusCode, axum::Json<serde_json::Value>)> {
 
     // 1. Tìm user trong DB bằng email
     let user_result = sqlx::query_as!(
@@ -82,21 +85,24 @@ pub async fn login(
     let user = match user_result {
         Ok(Some(u)) => u,
         _ => {
-            return (
-                StatusCode::UNAUTHORIZED,
+            return Err((
+                axum::http::StatusCode::UNAUTHORIZED,
                 Json(json!({ "error": "Email hoặc mật khẩu không chính xác" })),
-            );
+            ));
         }
     };
 
     // 2. Kiểm tra mật khẩu
-    let is_valid = verify(&payload.password, &user.password_hash).unwrap_or(false);
+    let is_valid = match &user.password_hash {
+        Some(hash) => bcrypt::verify(&payload.password, hash).unwrap_or(false),
+        None => false,
+    };
 
     if !is_valid {
-        return (
-            StatusCode::UNAUTHORIZED,
+        return Err((
+            axum::http::StatusCode::UNAUTHORIZED,
             Json(json!({ "error": "Email hoặc mật khẩu không chính xác" })),
-        );
+        ));
     }
 
     // 3. Tạo JWT Token
@@ -111,7 +117,7 @@ pub async fn login(
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
-        role: user.role.unwrap_or_else(|| "customer".to_string()),
+        role: user.role.clone().unwrap_or_else(|| "customer".to_string()),
         exp: expiration,
     };
 
@@ -122,27 +128,23 @@ pub async fn login(
     ) {
         Ok(t) => t,
         Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
+            return Err((
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Lỗi khi tạo token đăng nhập" })),
-            );
+            ));
         }
     };
 
     // 4. Trả về Token và thông tin cơ bản cho Frontend
-    (
-        StatusCode::OK,
-        Json(json!({
-            "message": "Đăng nhập thành công",
+    Ok(Json(json!({
+            "message": "Đăng nhập thành công!",
             "token": token,
             "user": {
                 "id": user.id,
-                "full_name": user.full_name,
-                "email": user.email,
-                "role": claims.role
+                "full_name": &user.full_name,
+                "role": &user.role
             }
-        })),
-    )
+        })))
 }
 
 // API Lấy thông tin Profile (Được bảo vệ bởi Extractor Claims)
@@ -203,4 +205,110 @@ pub async fn get_my_profile(
             )
         }
     }
+}
+
+// Struct nhận Token từ Vue gửi lên
+#[derive(Deserialize)]
+pub struct GoogleLoginReq {
+    pub token: String,
+}
+
+// Struct để hứng dữ liệu Google trả về khi mình mang Token đi hỏi
+#[derive(Deserialize)]
+pub struct GoogleUserInfo {
+    pub email: String,
+    pub name: String,
+    pub sub: String, // Google gọi ID của họ là "sub"
+    pub picture: Option<String>,
+}
+
+pub async fn google_login(
+    State(pool): State<PgPool>,
+    Json(payload): Json<GoogleLoginReq>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    
+    // 1. Mang Token của khách đi hỏi Google xem có chuẩn không
+    let client = reqwest::Client::new();
+    let google_res = client
+        .get(format!(
+            "https://oauth2.googleapis.com/tokeninfo?id_token={}",
+            payload.token
+        ))
+        .send()
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Không thể kết nối đến Google".to_string()))?;
+
+    if !google_res.status().is_success() {
+        return Err((StatusCode::UNAUTHORIZED, "Token Google không hợp lệ hoặc đã hết hạn!".to_string()));
+    }
+
+    // 2. Lấy thông tin khách hàng từ Google (Email, Tên, Ảnh)
+    let google_user: GoogleUserInfo = google_res
+        .json()
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi đọc dữ liệu Google".to_string()))?;
+
+    println!("Khách hàng chuẩn bị đăng nhập: {} ({})", google_user.name, google_user.email);
+
+    // 3. Lưu vào Database (PostgreSQL)
+    // Dùng tuyệt chiêu ON CONFLICT: Nếu email chưa có thì Thêm mới, nếu có rồi thì Cập nhật google_id
+    let user_record = sqlx::query!(
+        r#"
+        INSERT INTO users (email, full_name, google_id, avatar_url, role)
+        VALUES ($1, $2, $3, $4, 'customer')
+        ON CONFLICT (email) 
+        DO UPDATE SET 
+            google_id = EXCLUDED.google_id,
+            avatar_url = EXCLUDED.avatar_url,
+            updated_at = NOW()
+        RETURNING id, full_name, role
+        "#,
+        google_user.email,
+        google_user.name,
+        google_user.sub,
+        google_user.picture
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Lỗi Database: {}", e)))?;
+
+    // 4. Trả kết quả thành công về cho Vue
+    // 1. Tạo JWT Token cho khách dùng Google giống hệt khách thường
+    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let expiration = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::hours(24))
+        .expect("Lỗi tính toán thời gian")
+        .timestamp() as usize;
+
+    let claims = Claims { // Đảm bảo bạn đã khai báo struct Claims ở file này
+        sub: user_record.id.to_string(),
+        email: google_user.email,
+        role: user_record.role.clone().unwrap_or_else(|| "customer".to_string()),
+        exp: expiration,
+    };
+
+    let token = match jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &claims,
+        &jsonwebtoken::EncodingKey::from_secret(jwt_secret.as_bytes()),
+    ) {
+        Ok(t) => t,
+        Err(_) => {
+            return Err((
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                "Lỗi khi tạo token đăng nhập Google".to_string(),
+            ));
+        }
+    };
+
+    // 2. Trả về đúng cấu trúc mà Frontend Vue đang chờ đợi
+    Ok(Json(json!({
+        "message": "Đăng nhập Google thành công!",
+        "token": token,
+        "user": {
+            "id": user_record.id,
+            "full_name": user_record.full_name,
+            "role": user_record.role
+        }
+    })))
 }

@@ -1,112 +1,168 @@
 <script setup>
-import { reactive } from 'vue'
-import { useVuelidate } from '@vuelidate/core'
-import { required, minLength, helpers } from '@vuelidate/validators'
+import { GoogleLogin } from 'vue3-google-login'
+import axios from 'axios'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-// 1. Khai báo state lưu trữ dữ liệu form
-const formData = reactive({
-  emailOrPhone: '',
+const router = useRouter()
+
+// 1. Biến chứa dữ liệu form đăng nhập
+const form = reactive({
+  email: '',
   password: ''
 })
 
-// 2. Định nghĩa các quy tắc kiểm tra (Rules)
-const rules = {
-  emailOrPhone: { 
-    // Tùy chỉnh thông báo lỗi bằng helpers.withMessage
-    required: helpers.withMessage('Vui lòng nhập Email hoặc Số điện thoại', required) 
-  },
-  password: { 
-    required: helpers.withMessage('Vui lòng nhập Mật khẩu', required),
-    minLength: helpers.withMessage('Mật khẩu phải có ít nhất 6 ký tự', minLength(6))
-  }
-}
+const errorMessage = ref('')
 
-// 3. Khởi tạo Vuelidate
-const v$ = useVuelidate(rules, formData)
-
-// 4. Hàm xử lý khi bấm nút Đăng nhập
+// 2. Hàm xử lý Đăng nhập
 const handleLogin = async () => {
-  // Kích hoạt kiểm tra toàn bộ form
-  const isFormValid = await v$.value.$validate()
-  
-  if (!isFormValid) {
-    console.log('Form không hợp lệ, vui lòng kiểm tra lại!')
+  errorMessage.value = ''
+
+  if (!form.email || !form.password) {
+    alert('Vui lòng nhập email và mật khẩu!')
     return
   }
 
-  // Nếu hợp lệ, tiến hành gọi API backend ở đây
-  console.log('Dữ liệu hợp lệ, chuẩn bị gửi lên server Axum:', formData)
-  // TODO: Gọi service API...
+  try {
+    // Gọi API Login tới Backend Rust
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: form.email,
+        password: form.password
+      })
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      // Đăng nhập thành công
+      alert(data.message)
+
+      // Lưu Token và Tên user vào LocalStorage
+      localStorage.setItem('user_token', data.token)
+      localStorage.setItem('user_name', data.user.full_name)
+
+      window.location.href = '/'
+
+    } else {
+      // Đăng nhập thất bại (Sai pass/email)
+      errorMessage.value = data.error
+      alert(data.error)
+    }
+
+  } catch (error) {
+    console.error('Lỗi kết nối API:', error)
+    alert('Không thể kết nối đến máy chủ Backend.')
+  }
 }
+
+
+const handleGoogleLoginSuccess = async (response) => {
+  const token = response.credential;
+  
+  try {
+    const res = await axios.post('http://localhost:3000/api/auth/google', {
+      token: token
+    });
+    
+    // 1. Lưu Token và thông tin User vào bộ nhớ trình duyệt (LocalStorage)
+    // Để các trang khác (như trang chủ, giỏ hàng) có thể lấy ra dùng
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user)); // user phải biến thành chuỗi mới lưu được
+    
+    // 2. Chuyển hướng người dùng về Trang chủ (route '/')
+    router.push('/');
+    
+  } catch (error) {
+    console.error("Lỗi đăng nhập:", error);
+    alert("Có lỗi xảy ra khi đăng nhập!");
+  }
+}
+
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="flex flex-col md:flex-row bg-white rounded-lg shadow-sm border overflow-hidden min-h-[600px] max-w-5xl mx-auto">
-      
-      <!-- Cột Trái: Hình ảnh -->
-      <div class="md:w-1/2 bg-[#e8f3f8] relative flex items-center justify-center p-8">
-        <div class="text-center text-gray-400 border-2 border-dashed border-gray-300 w-full h-full flex items-center justify-center rounded">
-          <span>[Hình ảnh Điện thoại & Giỏ hàng]</span>
+  <div class="flex flex-col lg:flex-row items-center mt-10 mb-24 max-w-7xl mx-auto overflow-hidden">
+
+    <!-- Cột TRÁI: Hình ảnh minh họa -->
+    <div class="hidden lg:block lg:w-1/2 pr-10">
+      <div class="bg-[#cbe4e8] h-[700px] flex items-center justify-center rounded-r-lg overflow-hidden">
+        <div class="w-full h-full flex flex-col items-center justify-center text-teal-700 opacity-70">
+          <svg class="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          <span class="font-medium text-lg">[Hình ảnh Điện thoại & Giỏ hàng]</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột PHẢI: Form Đăng nhập -->
+    <div class="w-full lg:w-1/2 px-6 sm:px-12 md:px-24 flex flex-col justify-center">
+
+      <h1 class="text-3xl md:text-4xl font-medium text-gray-900 mb-4 tracking-tight">Đăng nhập</h1>
+      <p class="text-base text-gray-600 mb-12">Nhập thông tin chi tiết dưới đây</p>
+
+      <form @submit.prevent="handleLogin" class="space-y-10">
+
+        <!-- Input Email -->
+        <div>
+          <input
+              type="email"
+              v-model="form.email"
+              placeholder="Email hoặc Số Điện Thoại"
+              required
+              class="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-primary transition-colors text-gray-700 text-base bg-transparent placeholder-gray-400"
+          />
+        </div>
+
+        <!-- Input Mật khẩu -->
+        <div>
+          <input
+              type="password"
+              v-model="form.password"
+              placeholder="Mật khẩu"
+              required
+              class="w-full border-b border-gray-300 py-2 focus:outline-none focus:border-primary transition-colors text-gray-700 text-base bg-transparent placeholder-gray-400"
+          />
+        </div>
+
+        <!-- Khối Nút Bấm -->
+        <div class="flex items-center justify-between pt-4">
+
+          <!-- Nút Đăng nhập -->
+          <button
+              type="submit"
+              class="bg-primary text-white py-4 px-10 rounded text-base font-medium hover:bg-blue-600 transition"
+          >
+            Đăng nhập
+          </button>
+          
+          <!-- Quên mật khẩu -->
+          <router-link to="/forgot-password" class="text-danger hover:underline transition font-medium">
+            Quên mật khẩu?
+          </router-link>
+          
+        </div>
+        
+      </form>
+      <!-- Nút Đăng nhập Google-->
+      <div class="mt-8">
+        <div class="flex justify-center">
+          <GoogleLogin :callback="handleGoogleLoginSuccess" />
         </div>
       </div>
 
-      <!-- Cột Phải: Form Đăng nhập -->
-      <div class="md:w-1/2 p-8 md:p-16 flex flex-col justify-center">
-        <h2 class="text-3xl font-bold mb-2 text-gray-900">Đăng nhập</h2>
-        <p class="text-gray-500 mb-10 text-sm">Điền thông tin của bạn</p>
-        
-        <form @submit.prevent="handleLogin">
-          <!-- Input Email/Phone -->
-          <div class="mb-6 relative">
-            <input 
-              type="text" 
-              v-model="formData.emailOrPhone"
-              placeholder="Email hoặc Số Điện Thoại" 
-              :class="{ 'border-danger': v$.emailOrPhone.$error }"
-              class="w-full border-b border-gray-300 py-3 focus:outline-none focus:border-primary transition-colors bg-transparent placeholder-gray-400 text-sm" 
-            />
-            <!-- Hiển thị lỗi -->
-            <span v-if="v$.emailOrPhone.$error" class="text-danger text-xs absolute -bottom-4 left-0">
-              {{ v$.emailOrPhone.$errors[0].$message }}
-            </span>
-          </div>
-
-          <!-- Input Password -->
-          <div class="mb-6 relative mt-6">
-            <input 
-              type="password" 
-              v-model="formData.password"
-              placeholder="Mật khẩu" 
-              :class="{ 'border-danger': v$.password.$error }"
-              class="w-full border-b border-gray-300 py-3 focus:outline-none focus:border-primary transition-colors bg-transparent placeholder-gray-400 text-sm" 
-            />
-            <!-- Hiển thị lỗi -->
-            <span v-if="v$.password.$error" class="text-danger text-xs absolute -bottom-4 left-0">
-              {{ v$.password.$errors[0].$message }}
-            </span>
-          </div>
-          
-          <div class="flex items-center justify-between mt-10">
-            <button 
-              type="submit"
-              class="bg-primary text-white px-10 py-3 rounded hover:bg-blue-600 transition font-medium">
-              Đăng nhập
-            </button>
-            <router-link to="/forgot-password" class="text-danger hover:underline text-sm">
-              Quên Mật Khẩu ?
-            </router-link>
-          </div>
-
-          <p class="text-center mt-8 text-gray-500 text-sm">
-            Bạn chưa có tài khoản? 
-            <router-link to="/register" class="text-primary font-medium hover:underline">
-              Đăng ký ngay
-            </router-link> 
-          </p>
-        </form>
+      <!-- Liên kết sang Đăng ký -->
+      <div class="mt-8 text-center text-base text-gray-600 flex items-center justify-center gap-2">
+        <span>Bạn chưa có tài khoản?</span>
+        <router-link to="/register" class="text-gray-900 hover:text-primary font-medium underline transition pb-0.5 border-b border-transparent hover:border-primary">
+          Đăng ký ngay
+        </router-link>
       </div>
 
     </div>
+
   </div>
 </template>

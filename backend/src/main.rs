@@ -5,6 +5,7 @@ use std::env;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::services::ServeDir;
+use crate::handlers::auth::google_login;
 
 // Import thêm thư viện CORS
 use tower_http::cors::{Any, CorsLayer};
@@ -49,6 +50,7 @@ async fn main() {
         .route("/api/products", post(handlers::product::create_product))
         .route("/api/products/:id", get(handlers::product::get_product_by_id))
         .nest_service("/images", ServeDir::new("../images_product"))
+        .route("/api/auth/google", post(handlers::auth::google_login))
         .layer(cors)
         .with_state(pool);
 

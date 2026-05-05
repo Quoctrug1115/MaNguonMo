@@ -1,26 +1,31 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const user = ref(null)
 
 // Quản lý trạng thái mở/đóng của dropdown tài khoản
 const isAccountMenuOpen = ref(false)
 
-// Trạng thái đăng nhập giả lập
-const isLoggedIn = ref(true) 
-const userName = ref('Trung')
+// 1. Khởi tạo trạng thái mặc định là CHƯA ĐĂNG NHẬP
+const isLoggedIn = ref(false)
+const userName = ref('')
 
-// Hàm xử lý khi bấm Đăng xuất
+// 2. Hàm onMounted sẽ tự động chạy ngay khi Header được hiển thị
+onMounted(() => {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+})
+
+// 3. Hàm xử lý khi bấm Đăng xuất
 const handleLogout = () => {
-  // 1. Chuyển trạng thái đăng nhập về false
-  isLoggedIn.value = false
-  
-  // 2. Đóng menu dropdown
-  isAccountMenuOpen.value = false
-  
-  // 3. (Tùy chọn) Chuyển hướng người dùng về trang chủ hoặc trang đăng nhập
-  router.push('/login') 
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  user.value = null
+  router.push('/login') // Đẩy về trang đăng nhập
 }
 </script>
 
@@ -36,15 +41,26 @@ const handleLogout = () => {
       <!-- Navigation Links -->
       <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
         <router-link to="/" class="hover:text-primary transition">Trang chủ</router-link>
+        <router-link to="/products" class="hover:text-primary font-medium">Sản Phẩm</router-link>
         <router-link to="/contact" class="hover:text-primary transition">Liên hệ</router-link>
         <router-link to="/about" class="hover:text-primary transition">Về chúng tôi</router-link>
         
         <!-- Xử lý logic Đăng nhập / Hiển thị tên -->
-        <router-link v-if="!isLoggedIn" to="/login" class="hover:text-primary transition">
-          Đăng nhập
-        </router-link>
-        <div v-else class="text-primary font-medium cursor-pointer">
-          Xin chào, {{ userName }}
+        <!-- NẾU ĐÃ ĐĂNG NHẬP: Hiện tên khách hàng và nút Đăng xuất -->
+        <div v-if="user" class="flex items-center gap-4">
+          <span class="text-sm font-medium text-gray-700">
+            Chào, {{ user.full_name }}
+          </span>
+          <button @click="handleLogout" class="text-sm text-red-500 hover:underline">
+            Đăng xuất
+          </button>
+        </div>
+
+        <!-- NẾU CHƯA ĐĂNG NHẬP: Hiện nút Đăng nhập như cũ -->
+        <div v-else>
+          <router-link to="/login" class="text-sm text-gray-700 hover:text-blue-600">
+            Đăng nhập
+          </router-link>
         </div>
       </nav>
 

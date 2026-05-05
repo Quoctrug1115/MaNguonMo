@@ -29,22 +29,26 @@ const router = createRouter({
     {
       path: '/wishlist',
       name: 'wishlist',
-      component: () => import('../views/WishlistView.vue')
+      component: () => import('../views/WishlistView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/cart',
       name: 'cart',
-      component: () => import('../views/CartView.vue')
+      component: () => import('../views/CartView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/checkout',
       name: 'checkout',
-      component: () => import('../views/CheckoutView.vue')
+      component: () => import('../views/CheckoutView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/account',
       name: 'account',
-      component: () => import('../views/AccountView.vue')
+      component: () => import('../views/AccountView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/about',
@@ -57,10 +61,15 @@ const router = createRouter({
       component: () => import('../views/ContactView.vue')
     },
     {
-      // Sử dụng tham số động :id để biết người dùng đang xem sản phẩm nào
       path: '/product/:id',
       name: 'product-detail',
-      component: () => import('../views/ProductDetailView.vue')
+      component: () => import('../views/ProductDetailView.vue'),
+      props: true // Cho phép truyền ID như một prop vào component
+    },
+    {
+      path: '/products',
+      name: 'products',
+      component: () => import('../views/ProductsView.vue')
     },
     {
       // Cú pháp catch-all của Vue Router 4
@@ -69,6 +78,30 @@ const router = createRouter({
       component: () => import('../views/NotFoundView.vue')
     }
   ]
+})
+
+
+// TRẠM KIỂM SOÁT HÀNG RÀO FRONTEND
+router.beforeEach((to, from, next) => {
+  // 1. Kiểm tra xem người dùng đang có thẻ thông hành (token) không
+  const isAuthenticated = localStorage.getItem('user_token') !== null
+
+  // 2. Kiểm tra xem trang họ muốn vào (to) có yêu cầu thẻ không
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  if (requiresAuth && !isAuthenticated) {
+    // Nếu trang bắt buộc đăng nhập MÀ lại chưa đăng nhập -> Đuổi về trang Login
+    alert('Bạn cần đăng nhập để truy cập khu vực này!')
+    next('/login')
+  }
+  else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
+    // (Tùy chọn) Nếu ĐÃ đăng nhập rồi mà còn cố tình vào trang Login/Register -> Đẩy về Trang chủ
+    next('/')
+  }
+  else {
+    // Nếu hợp lệ -> Mở cổng cho đi tiếp
+    next()
+  }
 })
 
 export default router

@@ -1,24 +1,47 @@
 <script setup>
-import { ref } from 'vue'
+// 1. Gom tất cả import vào một chỗ cho gọn gàng
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
 import SidebarMenu from '@/components/home/SidebarMenu.vue'
 import HeroBanner from '@/components/home/HeroBanner.vue'
 import CategoryList from '@/components/home/CategoryList.vue'
 import ProductCard from '@/components/common/ProductCard.vue'
 import ServiceFeatures from '@/components/home/ServiceFeatures.vue'
 
-// Mock Data (Dữ liệu giả lập - Tái sử dụng chung cấu trúc)
-const productList = ref([
-  { id: 1, name: 'Tay cầm chơi game DualShock 4 Đỏ', image: '', price: 550000, originalPrice: 850000, discount: 35, isNew: false, rating: 4, reviews: 88 },
-  { id: 2, name: 'Bàn phím cơ Gaming RGB', image: '', price: 850000, originalPrice: 1200000, discount: 29, isNew: false, rating: 5, reviews: 45 },
-  { id: 3, name: 'Màn hình LCD 27 inch 144Hz', image: '', price: 3500000, originalPrice: 4200000, discount: 16, isNew: false, rating: 4, reviews: 120 },
-  { id: 4, name: 'Chuột không dây Logitech', image: '', price: 250000, originalPrice: 350000, discount: 28, isNew: false, rating: 5, reviews: 300 },
-  { id: 5, name: 'Laptop Dell XPS 15 Cảm ứng', image: '', price: 35000000, originalPrice: 35000000, discount: 0, isNew: true, rating: 5, reviews: 24 }
-])
+// 2. Đổi tên biến thành `productList` để khớp với vòng lặp dưới template
+const productList = ref([])
+
+// 3. Hàm gọi API lấy dữ liệu thực từ Rust
+const fetchProducts = async () => {
+  try {
+    // 1. Gọi đúng cổng 3000 của Backend Rust chưa?
+    const res = await axios.get('http://localhost:3000/api/products');
+    
+    products.value = res.data;
+    
+    console.log("Danh sách sản phẩm tải về:", products.value);
+    
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm:", error);
+  }
+}
+
+// 4. Chạy hàm lấy dữ liệu ngay khi vừa vào trang chủ
+onMounted(() => {
+  fetchProducts()
+})
+
+// Hàm format tiền (nếu cần dùng trực tiếp ở HomeView)
+const formatPrice = (price) => {
+  if (!price) return '0 ₫'
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+}
 </script>
 
 <template>
   <div class="container mx-auto px-4 max-w-6xl mb-12">
-    
+
     <!-- KHU VỰC 1: Cấu trúc chia đôi Sidebar (Menu) và Banner -->
     <div class="flex flex-col lg:flex-row gap-10 mb-20">
       <!-- Cột trái: Sidebar Menu (Chiếm khoảng 1/4) -->
@@ -38,10 +61,11 @@ const productList = ref([
         <h2 class="text-xl font-bold text-danger">Flash Sales</h2>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        <!-- Vòng lặp render sản phẩm thực từ DB -->
         <ProductCard v-for="product in productList" :key="'flash'+product.id" :product="product" />
       </div>
       <div class="flex justify-center mt-10">
-        <button class="bg-danger text-white px-10 py-3 rounded text-sm font-medium hover:bg-red-600 transition">Xem Tất Cả Sản Phẩm</button>
+        <router-link to="/products" class="bg-danger text-white px-10 py-3 rounded text-sm font-medium hover:bg-red-600 transition">Xem Tất Cả Sản Phẩm</router-link>
       </div>
     </section>
 
@@ -109,16 +133,16 @@ const productList = ref([
         <!-- 2 Box nhỏ bên phải -->
         <div class="grid grid-rows-2 gap-6">
           <div class="bg-black text-white rounded-lg p-8 flex flex-col justify-end relative overflow-hidden group cursor-pointer">
-             <div class="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-600">Hình Loa</div>
-             <div class="relative z-10">
+            <div class="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-600">Hình Loa</div>
+            <div class="relative z-10">
               <h3 class="text-xl font-bold mb-1">Loa Thông Minh</h3>
               <p class="text-sm text-gray-300 mb-3">Âm thanh sống động.</p>
               <a href="#" class="underline hover:text-gray-300 transition">Mua Ngay</a>
             </div>
           </div>
           <div class="bg-black text-white rounded-lg p-8 flex flex-col justify-end relative overflow-hidden group cursor-pointer">
-             <div class="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-600">Hình Nước Hoa</div>
-             <div class="relative z-10">
+            <div class="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-600">Hình Nước Hoa</div>
+            <div class="relative z-10">
               <h3 class="text-xl font-bold mb-1">Bộ Sưu Tập Premium</h3>
               <p class="text-sm text-gray-300 mb-3">Đẳng cấp khác biệt.</p>
               <a href="#" class="underline hover:text-gray-300 transition">Mua Ngay</a>

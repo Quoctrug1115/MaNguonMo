@@ -15,11 +15,16 @@ const userName = ref('')
 // 2. Hàm onMounted sẽ tự động chạy ngay khi Header được hiển thị
 onMounted(() => {
   const storedUser = localStorage.getItem('user')
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
+  // Thêm điều kiện chặn đứng chữ 'undefined'
+  if (storedUser && storedUser !== 'undefined') {
+    try {
+      user.value = JSON.parse(storedUser)
+    } catch (e) {
+      console.error("Dữ liệu user bị lỗi, tiến hành xóa:", e)
+      localStorage.removeItem('user') 
+    }
   }
 })
-
 // 3. Hàm xử lý khi bấm Đăng xuất
 const handleLogout = () => {
   localStorage.removeItem('token')

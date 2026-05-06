@@ -11,16 +11,15 @@ import ServiceFeatures from '@/components/home/ServiceFeatures.vue'
 
 // 2. Đổi tên biến thành `productList` để khớp với vòng lặp dưới template
 const productList = ref([])
-
+  
 // 3. Hàm gọi API lấy dữ liệu thực từ Rust
 const fetchProducts = async () => {
   try {
-    // 1. Gọi đúng cổng 3000 của Backend Rust chưa?
     const res = await axios.get('http://localhost:3000/api/products');
     
-    products.value = res.data;
+    productList.value = res.data.data;
     
-    console.log("Danh sách sản phẩm tải về:", products.value);
+    console.log("Danh sách sản phẩm tải về:", productList.value);
     
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm:", error);
@@ -61,8 +60,7 @@ const formatPrice = (price) => {
         <h2 class="text-xl font-bold text-danger">Flash Sales</h2>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        <!-- Vòng lặp render sản phẩm thực từ DB -->
-        <ProductCard v-for="product in productList" :key="'flash'+product.id" :product="product" />
+        <ProductCard v-for="product in (productList && productList.length ? productList.slice().reverse() : [])" :key="'best'+product.id" :product="product" />
       </div>
       <div class="flex justify-center mt-10">
         <router-link to="/products" class="bg-danger text-white px-10 py-3 rounded text-sm font-medium hover:bg-red-600 transition">Xem Tất Cả Sản Phẩm</router-link>

@@ -17,11 +17,10 @@ const errorMessage = ref('')
 // 2. Hàm xử lý Đăng nhập
 const handleLogin = async () => {
   errorMessage.value = ''
-
-  if (!form.email || !form.password) {
-    alert('Vui lòng nhập email và mật khẩu!')
-    return
-  }
+    if (!form.email || !form.password) {
+      alert('Vui lòng nhập email và mật khẩu!')
+      return
+    }
 
   try {
     // Gọi API Login tới Backend Rust
@@ -43,8 +42,8 @@ const handleLogin = async () => {
       alert(data.message)
 
       // Lưu Token và Tên user vào LocalStorage
-      localStorage.setItem('user_token', data.token)
-      localStorage.setItem('user_name', data.user.full_name)
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
 
       window.location.href = '/'
 

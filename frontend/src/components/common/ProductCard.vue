@@ -1,5 +1,9 @@
 <script setup>
 import { computed } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // Khai báo props để nhận dữ liệu từ component cha
 const props = defineProps({
@@ -41,6 +45,36 @@ const viewProductDetails = () => {
 const addToCart = () => {
   console.log('Thêm vào giỏ hàng:', props.product.id)
 }
+
+// 3. Viết hàm Thêm vào giỏ hàng
+const handleAddToCart = async () => {
+  const userStr = localStorage.getItem('user')
+  const token = localStorage.getItem('token')
+
+  if (!userStr || !token) {
+    alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!')
+    router.push('/login')
+    return
+  }
+
+  const user = JSON.parse(userStr)
+
+  try {
+    const response = await axios.post('http://localhost:3000/api/cart', {
+      user_id: user.id,          // ID người dùng đang đăng nhập
+      product_id: props.product.id, // ID của sản phẩm nằm trong cái thẻ này
+      quantity: 1                // Bấm ở ngoài thẻ thì mặc định thêm 1 cái
+    })
+
+    if (response.status === 200) {
+      alert(`🛒 Đã thêm [${props.product.name}] vào giỏ hàng thành công!`)
+    }
+  } catch (error) {
+    console.error('Lỗi khi thêm vào giỏ hàng:', error)
+    alert('Có lỗi xảy ra, không thể thêm vào giỏ hàng lúc này.')
+  }
+}
+
 </script>
 
 <template>
@@ -78,7 +112,7 @@ const addToCart = () => {
 
       <!-- Nút Thêm vào giỏ hàng -->
       <div class="absolute bottom-0 left-0 w-full translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20">
-        <button @click.prevent="addToCart" class="w-full bg-black text-white py-2 text-sm font-medium hover:bg-gray-800 transition-colors">
+        <button @click.prevent="handleAddToCart" class="w-full bg-black text-white py-2 text-sm font-medium hover:bg-gray-800 transition-colors">
           Thêm vào giỏ hàng
         </button>
       </div>

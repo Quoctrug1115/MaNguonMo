@@ -9,3 +9,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 
 select * from users
+
+
+
+select * from products
+
+

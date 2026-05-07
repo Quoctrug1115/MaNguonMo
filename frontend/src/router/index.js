@@ -83,24 +83,15 @@ const router = createRouter({
 
 // TRẠM KIỂM SOÁT HÀNG RÀO FRONTEND
 router.beforeEach((to, from, next) => {
-  // 1. Kiểm tra xem người dùng đang có thẻ thông hành (token) không
-  const isAuthenticated = localStorage.getItem('user_token') !== null
+  // 1. Kiểm tra đúng tên chìa khóa là 'token' (giống với lúc Đăng nhập)
+  const isAuthenticated = localStorage.getItem('token');
 
-  // 2. Kiểm tra xem trang họ muốn vào (to) có yêu cầu thẻ không
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-
-  if (requiresAuth && !isAuthenticated) {
-    // Nếu trang bắt buộc đăng nhập MÀ lại chưa đăng nhập -> Đuổi về trang Login
-    alert('Bạn cần đăng nhập để truy cập khu vực này!')
-    next('/login')
-  }
-  else if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
-    // (Tùy chọn) Nếu ĐÃ đăng nhập rồi mà còn cố tình vào trang Login/Register -> Đẩy về Trang chủ
-    next('/')
-  }
-  else {
-    // Nếu hợp lệ -> Mở cổng cho đi tiếp
-    next()
+  // 2. Nếu trang đó yêu cầu đăng nhập (requiresAuth) MÀ lại không có token
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    alert('Bạn cần đăng nhập để truy cập khu vực này!');
+    next('/login'); // Đá về trang đăng nhập
+  } else {
+    next(); // Cho phép đi tiếp
   }
 })
 

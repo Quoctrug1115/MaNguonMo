@@ -1,180 +1,142 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-// Mock Data: Sản phẩm trong giỏ hàng
-const cartItems = ref([
-  { id: 1, name: 'LCD Monitor', price: 6500000, quantity: 1, image: '' },
-  { id: 2, name: 'H1 Gamepad', price: 550000, quantity: 2, image: '' }
-])
+const router = useRouter()
+const cartItems = ref([])
 
-const couponCode = ref('')
 
-// Format tiền tệ VNĐ
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+const fetchCart = async () => {
+  const userStr = localStorage.getItem('user')
+  
+  if (!userStr) {
+    // Nếu chưa đăng nhập thì đẩy về trang login
+    router.push('/login')
+    return
+  }
+
+  const user = JSON.parse(userStr)
+
+  try {
+    // Gọi API của Rust
+    const res = await axios.get(`http://localhost:3000/api/cart/${user.id}`)
+    
+    // Gán dữ liệu thật vào biến. Nhớ cấu trúc res.data.data nhé!
+    cartItems.value = res.data.data
+  } catch (error) {
+    console.error("Lỗi lấy giỏ hàng:", error)
+  }
 }
 
-// Xóa sản phẩm khỏi giỏ
-const removeItem = (id) => {
-  cartItems.value = cartItems.value.filter(item => item.id !== id)
+onMounted(() => {
+  fetchCart()
+})
+
+const increaseQty = (item) => item.quantity++
+const decreaseQty = (item) => {
+  if (item.quantity > 1) item.quantity--
 }
 
-// Tính tổng tiền đơn hàng
-const cartTotal = computed(() => {
+const removeItem = (cart_item_id) => {
+  // Chú ý: Dùng cart_item_id thay vì id
+  cartItems.value = cartItems.value.filter(item => item.cart_item_id !== cart_item_id)
+}
+
+// Tính tổng tiền dựa trên dữ liệu thật
+const subtotal = computed(() => {
   return cartItems.value.reduce((total, item) => total + (item.price * item.quantity), 0)
 })
 
-// Thêm hàm này để xử lý giảm số lượng
-const decreaseQuantity = (item) => {
-  if (item.quantity > 1) {
-    item.quantity--
-  }
+// Hàm format tiền tệ
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
+
 </script>
 
 <template>
-  <div class="container mx-auto px-4 max-w-6xl py-10 mb-20">
-    
-    <!-- Breadcrumb -->
-    <div class="text-sm text-gray-500 mb-10">
-      <router-link to="/" class="hover:text-primary">Home</router-link> / <span class="text-gray-900">Cart</span>
-    </div>
+  <div class="container mx-auto px-4 max-w-6xl py-10 mb-20 text-gray-800">
+    <nav class="text-sm text-gray-500 mb-10">
+      <router-link to="/" class="hover:text-black">Trang chủ</router-link>
+      <span class="mx-2">/</span>
+      <span class="text-black font-medium">Cart</span>
+    </nav>
 
-    <!-- BẢNG GIỎ HÀNG -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8">
-      <!-- Header Bảng -->
-      <div class="grid grid-cols-12 gap-4 p-5 border-b border-gray-200 bg-gray-50 text-sm font-medium text-gray-700">
-        <div class="col-span-5">Sản phẩm</div>
-        <div class="col-span-2 text-center">Giá</div>
-        <div class="col-span-3 text-center">Số lượng</div>
+    <div class="mb-8">
+      <div class="grid grid-cols-12 gap-4 py-4 shadow-sm bg-white rounded-md mb-6 font-medium text-center md:text-left px-6">
+        <div class="col-span-5 text-left">Sản phẩm</div>
+        <div class="col-span-2">Giá</div>
+        <div class="col-span-3">Số Lượng</div>
         <div class="col-span-2 text-right">Thành tiền</div>
       </div>
 
-      <!-- Danh sách sản phẩm -->
-      <div v-if="cartItems.length === 0" class="p-10 text-center text-gray-500">
-        Giỏ hàng của bạn đang trống.
-      </div>
-      
-      <div 
-        v-for="item in cartItems" 
-        :key="item.id" 
-        class="grid grid-cols-12 gap-4 p-5 border-b border-gray-100 items-center hover:bg-gray-50 transition"
-      >
-        <!-- Cột 1: Thông tin sản phẩm -->
-        <div class="col-span-5 flex items-center gap-4">
-          <!-- Nút Xóa -->
-          <button @click="removeItem(item.id)" class="text-danger hover:text-red-700 bg-red-50 p-1 rounded-full transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-          <!-- Ảnh -->
-          <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 overflow-hidden">
-             <img v-if="item.image" :src="item.image" :alt="item.name" class="object-cover w-full h-full" />
-             <span v-else>Ảnh</span>
-          </div>
-          <span class="font-medium text-sm">{{ item.name }}</span>
-        </div>
+      <div v-for="item in cartItems" :key="item.cart_item_id" 
+        class="grid grid-cols-12 gap-4 items-center py-6 shadow-sm bg-white rounded-md mb-4 px-6 relative group">
+        <button @click="removeItem(item.cart_item_id)" class="absolute left-2 top-1/2 -translate-y-1/2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+          ✖
+        </button>
 
-        <!-- Cột 2: Đơn giá -->
-        <div class="col-span-2 text-center text-sm">
-          {{ formatPrice(item.price) }}
+        <div class="col-span-5 flex items-center gap-4 pl-4">
+          <img :src="item.image_url" class="w-12 h-12 object-cover rounded" alt="product" />
+          <span class="font-medium truncate" :title="item.product_name">{{ item.product_name }}</span>
         </div>
-
-        <!-- Cột 3: Nút tăng giảm số lượng -->
-        <div class="col-span-3 flex justify-center">
-          <div class="flex items-center border border-gray-300 rounded overflow-hidden w-24">
-            <button 
-                @click="decreaseQuantity(item)" 
-                class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 transition"
-                >
-                -
-            </button>
-            <input 
-              type="number" 
-              v-model.number="item.quantity" 
-              min="1" 
-              class="w-full text-center text-sm py-1 focus:outline-none bg-white font-medium"
-            />
-            <button 
-              @click="item.quantity++" 
-              class="px-2 py-1 bg-white hover:bg-gray-100 text-gray-600 transition"
-            >
-              +
-            </button>
+        
+        <div class="col-span-2 text-center md:text-left text-red-500 font-medium">{{ formatPrice(item.price) }}</div>
+        
+        <div class="col-span-3 flex justify-center md:justify-start">
+          <div class="flex items-center border border-gray-300 rounded w-20 md:w-24 h-10">
+            <span class="w-full text-center">{{ item.quantity }}</span>
+            <div class="flex flex-col border-l border-gray-300 w-8 h-full">
+              <button @click="increaseQty(item)" class="h-1/2 border-b border-gray-300 hover:bg-gray-100 flex items-center justify-center text-xs">▲</button>
+              <button @click="decreaseQty(item)" class="h-1/2 hover:bg-gray-100 flex items-center justify-center text-xs">▼</button>
+            </div>
           </div>
         </div>
-
-        <!-- Cột 4: Thành tiền -->
-        <div class="col-span-2 text-right text-sm font-medium">
-          {{ formatPrice(item.price * item.quantity) }}
-        </div>
+        
+        <div class="col-span-2 text-right font-medium text-red-500">{{ formatPrice(item.price * item.quantity) }}</div>
       </div>
     </div>
 
-    <!-- Các nút hành động (Trở về shop / Cập nhật giỏ hàng) -->
     <div class="flex justify-between items-center mb-16">
-      <router-link to="/" class="border border-gray-300 px-8 py-3 rounded text-sm font-medium hover:bg-gray-50 transition">
+      <router-link to="/" class="px-8 py-3 border border-gray-400 rounded hover:bg-gray-50 font-medium transition">
         Trở về
       </router-link>
-      <button class="border border-gray-300 px-8 py-3 rounded text-sm font-medium hover:bg-gray-50 transition">
+      <button class="px-8 py-3 border border-gray-400 rounded hover:bg-gray-50 font-medium transition">
         Update Cart
       </button>
     </div>
 
-    <!-- KHU VỰC THANH TOÁN (Mã giảm giá & Tổng tiền) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-      
-      <!-- Cột trái: Mã giảm giá -->
-      <div class="flex gap-4">
-        <input 
-          type="text" 
-          v-model="couponCode"
-          placeholder="MÃ GIẢM GIÁ" 
-          class="border border-gray-300 rounded px-6 py-3 w-64 focus:outline-none focus:border-primary text-sm"
-        />
-        <button class="bg-primary text-white px-8 py-3 rounded text-sm font-medium hover:bg-blue-600 transition">
+    <div class="flex flex-col md:flex-row justify-between gap-10 items-start">
+      <div class="flex gap-4 w-full md:w-1/2">
+        <input type="text" placeholder="Mã giảm giá" class="border border-black rounded px-4 py-3 flex-grow outline-none focus:ring-1 focus:ring-blue-500" />
+        <button class="bg-blue-600 text-white px-8 py-3 rounded font-medium hover:bg-blue-700 transition whitespace-nowrap">
           Thêm
         </button>
       </div>
 
-      <!-- Cột phải: Box Tổng tiền -->
-      <div class="border border-gray-900 rounded p-6">
-        <h3 class="text-lg font-medium mb-6">Tổng tiền</h3>
+      <div class="border border-black rounded-md p-6 w-full md:w-[400px]">
+        <h2 class="text-xl font-medium mb-6">Tổng tiền</h2>
         
-        <div class="flex justify-between border-b border-gray-200 py-4 text-sm">
+        <div class="flex justify-between border-b border-gray-200 pb-4 mb-4">
           <span class="text-gray-600">Đơn hàng:</span>
-          <span class="font-medium">{{ formatPrice(cartTotal) }}</span>
+          <span class="font-medium">{{ formatPrice(subtotal) }}</span>
         </div>
         
-        <div class="flex justify-between border-b border-gray-200 py-4 text-sm">
+        <div class="flex justify-between border-b border-gray-200 pb-4 mb-4">
           <span class="text-gray-600">Phí vận chuyển:</span>
-          <span class="font-medium text-green-600">Free</span>
+          <span class="font-medium">Free</span>
         </div>
         
-        <div class="flex justify-between py-4 text-base font-medium">
-          <span>Thành tiền:</span>
-          <span>{{ formatPrice(cartTotal) }}</span>
+        <div class="flex justify-between mb-6">
+          <span class="text-gray-800 font-medium">Thành tiền:</span>
+          <span class="font-bold text-lg">{{ formatPrice(subtotal) }}</span>
         </div>
 
-        <div class="mt-4 flex justify-center">
-          <router-link to="/checkout" class="bg-primary text-white px-8 py-3 rounded text-sm font-medium hover:bg-blue-600 transition">
-            Đi Đến Thanh Toán
-          </router-link>
-        </div>
+        <router-link to="/checkout" class="block w-full text-center bg-blue-600 text-white py-3 rounded font-medium hover:bg-blue-700 transition">
+          Đi Đến Thanh Toán
+        </router-link>
       </div>
-
     </div>
-
   </div>
 </template>
-
-<style scoped>
-/* Ẩn mũi tên lên xuống mặc định của input type="number" */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-</style>

@@ -51,6 +51,8 @@ async fn main() {
         .route("/api/products/:id", get(handlers::product::get_product_by_id))
         .nest_service("/images", ServeDir::new("../images_product"))
         .route("/api/auth/google", post(handlers::auth::google_login))
+        .route("/api/cart", post(handlers::cart::add_to_cart))
+        .route("/api/cart/:user_id", get(handlers::cart::get_cart))
         .layer(cors)
         .with_state(pool);
 

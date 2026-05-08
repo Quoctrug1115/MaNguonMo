@@ -2,6 +2,8 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ProductCard from '@/components/common/ProductCard.vue'
+import { fetchCartCount } from '@/store/cartState'
+import axios from 'axios'
 
 const route = useRoute()
 const isLoading = ref(true)
@@ -66,6 +68,41 @@ watch(() => route.params.id, (newId) => {
 const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
+
+
+const handleAddToCart = async () => {
+  // 1. Kiểm tra đăng nhập
+  const userStr = localStorage.getItem('user')
+  const token = localStorage.getItem('token')
+
+  if (!userStr || !token) {
+    alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!')
+    router.push('/login')
+    return
+  }
+
+  const user = JSON.parse(userStr)
+
+  // 2. Gọi API thêm vào giỏ
+  try {
+    const response = await axios.post('http://localhost:3000/api/cart', {
+      user_id: user.id,
+      product_id: product.value.id, // Lấy ID của sản phẩm đang xem
+      quantity: quantity.value || 1 // Lấy số lượng người dùng chọn (mặc định là 1)
+    })
+
+    if (response.status === 200) {
+      alert(`🛒 Đã thêm ${quantity.value} [${product.value.name}] vào giỏ hàng!`)
+      
+      // 3. Cập nhật lại con số màu đỏ trên Header
+      fetchCartCount() 
+    }
+  } catch (error) {
+    console.error('Lỗi khi thêm vào giỏ hàng:', error)
+    alert('Có lỗi xảy ra, không thể thêm vào giỏ hàng lúc này.')
+  }
+}
+
 </script>
 
 <template>
@@ -134,8 +171,8 @@ const formatDate = (dateStr) => {
               <input v-model="quantity" type="number" class="w-14 text-center border-none focus:ring-0 font-medium" />
               <button @click="quantity++" class="px-4 text-lg hover:bg-gray-50">+</button>
             </div>
-            <button class="flex-grow bg-blue-600 text-white h-12 rounded-md font-bold hover:bg-blue-700 transition">
-              Mua ngay
+            <button @click="handleAddToCart" class="flex-grow bg-blue-600 text-white h-12 rounded-md font-bold hover:bg-blue-700 transition">
+              Thêm vào giỏ hàng
             </button>
             <button class="h-12 w-12 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-50 text-gray-500">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>

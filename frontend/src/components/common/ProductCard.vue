@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { fetchCartCount } from '@/store/cartState'
 
 const router = useRouter()
 
@@ -68,6 +69,7 @@ const handleAddToCart = async () => {
 
     if (response.status === 200) {
       alert(`🛒 Đã thêm [${props.product.name}] vào giỏ hàng thành công!`)
+      fetchCartCount()
     }
   } catch (error) {
     console.error('Lỗi khi thêm vào giỏ hàng:', error)

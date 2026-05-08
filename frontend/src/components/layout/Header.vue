@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { cartCount, fetchCartCount } from '@/store/cartState'
 
 const router = useRouter()
 const user = ref(null)
+
 
 // Quản lý trạng thái mở/đóng của dropdown tài khoản
 const isAccountMenuOpen = ref(false)
@@ -24,6 +26,7 @@ onMounted(() => {
       localStorage.removeItem('user') 
     }
   }
+  fetchCartCount() // Cập nhật số lượng giỏ hàng ngay khi Header load
 })
 // 3. Hàm xử lý khi bấm Đăng xuất
 const handleLogout = () => {
@@ -97,8 +100,9 @@ const handleLogout = () => {
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
           </svg>
-          <span v-if="isLoggedIn" class="absolute -top-1.5 -right-2 bg-danger text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-            2
+          
+          <span v-if="cartCount > 0" class="absolute -top-1.5 -right-2 bg-danger text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            {{ cartCount }}
           </span>
         </router-link>
 

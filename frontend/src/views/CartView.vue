@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { fetchCartCount } from '../store/cartState'
 
 const router = useRouter()
 const cartItems = ref([])
@@ -45,7 +46,7 @@ const decreaseQty = (item) => {
 
 const removeItem = async (cart_item_id) => {
   if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
-
+  fetchCartCount();
   try {
     await axios.delete(`http://localhost:3000/api/cart/item/${cart_item_id}`);
     // Xóa xong thì lọc mảng cục bộ để biến mất khỏi màn hình ngay
@@ -74,6 +75,7 @@ const updateQuantity = async (item, newQty) => {
     });
     // Nếu API thành công, cập nhật số lượng hiển thị trên màn hình
     item.quantity = newQty;
+    fetchCartCount();
   } catch (error) {
     console.error("Lỗi cập nhật số lượng:", error);
     alert("Không thể cập nhật số lượng!");

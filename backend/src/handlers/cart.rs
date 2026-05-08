@@ -96,3 +96,38 @@ pub async fn get_cart(
         "data": cart_json 
     })))
 }
+
+// 1. API CẬP NHẬT SỐ LƯỢNG (Dùng cho nút + và -)
+pub async fn update_cart_quantity(
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>, // ID của dòng trong bảng cart_items
+    Json(payload): Json<serde_json::Value>, // Nhận { "quantity": new_val }
+) -> Result<Json<Value>, (StatusCode, String)> {
+    
+    let new_quantity = payload["quantity"].as_i64().unwrap_or(1) as i32;
+
+    sqlx::query!(
+        "UPDATE cart_items SET quantity = $1, updated_at = NOW() WHERE id = $2",
+        new_quantity,
+        id
+    )
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(json!({ "message": "Cập nhật số lượng thành công" })))
+}
+
+// 2. API XÓA MỘT MÓN ĐỒ KHỎI GIỎ
+pub async fn delete_cart_item(
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+
+    sqlx::query!("DELETE FROM cart_items WHERE id = $1", id)
+    .execute(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(json!({ "message": "Đã xóa sản phẩm khỏi giỏ hàng" })))
+}

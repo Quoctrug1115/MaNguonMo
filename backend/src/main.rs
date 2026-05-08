@@ -1,4 +1,4 @@
-use axum::{routing::{get, post}, Router};
+use axum::{routing::{get, post, put, delete}, Router};
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::services::ServeDir;
 use crate::handlers::auth::google_login;
+use crate::handlers::order::{checkout, get_user_orders};
 
 // Import thêm thư viện CORS
 use tower_http::cors::{Any, CorsLayer};
@@ -53,6 +54,10 @@ async fn main() {
         .route("/api/auth/google", post(handlers::auth::google_login))
         .route("/api/cart", post(handlers::cart::add_to_cart))
         .route("/api/cart/:user_id", get(handlers::cart::get_cart))
+        .route("/api/cart/item/:id", put(handlers::cart::update_cart_quantity))
+        .route("/api/cart/item/:id", delete(handlers::cart::delete_cart_item))
+        .route("/api/orders/checkout", post(handlers::order::checkout))
+        .route("/api/orders/user/:user_id", get(handlers::order::get_user_orders))
         .layer(cors)
         .with_state(pool);
 

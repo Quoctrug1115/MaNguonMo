@@ -1,13 +1,77 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-// Dữ liệu mẫu
-const cartItems = ref([
-  { id: 1, name: 'LCD Monitor', price: 650, image: 'https://via.placeholder.com/40' },
-  { id: 2, name: 'H1 Gamepad', price: 1100, image: 'https://via.placeholder.com/40' }
-])
+const router = useRouter()
+const cartItems = ref([])
 
-const subtotal = 1750
+// Form dữ liệu khách hàng sẽ điền
+const form = ref({
+  fullName: '',
+  address: '',
+  city: '',
+  phone: '',
+  email: ''
+})
+
+// Lấy giỏ hàng (giống hệt trang Cart)
+const fetchCart = async () => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) {
+    router.push('/login')
+    return
+  }
+  const user = JSON.parse(userStr)
+  try {
+    const res = await axios.get(`http://localhost:3000/api/cart/${user.id}`)
+    cartItems.value = res.data.data
+  } catch (error) {
+    console.error("Lỗi lấy giỏ hàng:", error)
+  }
+}
+
+onMounted(() => { fetchCart() })
+
+// Tính tổng tiền tự động
+const subtotal = computed(() => {
+  return cartItems.value.reduce((total, item) => total + (item.price * item.quantity), 0)
+})
+
+// Hàm format tiền
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
+}
+
+// Hàm XỬ LÝ ĐẶT HÀNG
+const placeOrder = async () => {
+  // 1. Kiểm tra điền thiếu
+  if (!form.value.address || !form.value.phone) {
+    alert("Vui lòng điền Địa chỉ và Số điện thoại!")
+    return
+  }
+
+  const user = JSON.parse(localStorage.getItem('user'))
+
+  try {
+    // 2. Gọi API Checkout
+    const res = await axios.post('http://localhost:3000/api/orders/checkout', {
+      user_id: user.id,
+      shipping_address: `${form.value.address}, ${form.value.city}`,
+      phone_number: form.value.phone
+    })
+
+    // 3. Xử lý khi thành công
+    if (res.status === 200) {
+      alert("🎉 " + res.data.message + "\nMã đơn hàng: " + res.data.order_id)
+      router.push('/') // Đẩy về trang chủ (hoặc bạn có thể tạo trang Cảm ơn)
+    }
+
+  } catch (error) {
+    console.error("Lỗi đặt hàng:", error)
+    alert(error.response?.data?.error || "Đặt hàng thất bại. Vui lòng thử lại!")
+  }
+}
 </script>
 
 <template>
@@ -27,7 +91,7 @@ const subtotal = 1750
       <div class="lg:col-span-6 flex flex-col gap-5">
         <div>
           <label class="block text-sm text-gray-500 mb-2">Họ và Tên<span class="text-red-500">*</span></label>
-          <input type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
+          <input v-model="form.fullName" type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
         
         <div>
@@ -37,7 +101,7 @@ const subtotal = 1750
 
         <div>
           <label class="block text-sm text-gray-500 mb-2">Địa chỉ<span class="text-red-500">*</span></label>
-          <input type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
+          <input v-model="form.address" type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
         <div>
@@ -47,12 +111,12 @@ const subtotal = 1750
 
         <div>
           <label class="block text-sm text-gray-500 mb-2">Thành Phố<span class="text-red-500">*</span></label>
-          <input type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
+          <input v-model="form.city" type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
         <div>
           <label class="block text-sm text-gray-500 mb-2">Số Điện Thoại<span class="text-red-500">*</span></label>
-          <input type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
+          <input v-model="form.phone" type="text" class="w-full bg-gray-100 rounded-md px-4 py-3 outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
         <div>
@@ -68,18 +132,18 @@ const subtotal = 1750
 
       <div class="lg:col-span-6 lg:pl-10">
         <div class="flex flex-col gap-6 mb-8">
-          <div v-for="item in cartItems" :key="item.id" class="flex justify-between items-center">
+          <div v-for="item in cartItems" :key="item.cart_item_id" class="flex justify-between items-center">
             <div class="flex items-center gap-4">
-              <img :src="item.image" class="w-10 h-10 object-cover rounded" alt="img" />
-              <span class="font-medium">{{ item.name }}</span>
+              <img :src="item.image_url" class="w-10 h-10 object-cover rounded" alt="img" />
+              <span class="font-medium">{{ item.product_name }} (x{{ item.quantity }})</span>
             </div>
-            <span class="font-medium">${{ item.price }}</span>
+            <span class="font-medium text-red-500">{{ formatPrice(item.price * item.quantity) }}</span>
           </div>
         </div>
 
         <div class="flex justify-between border-b border-gray-200 pb-4 mb-4">
           <span class="text-gray-600">Sản Phẩm:</span>
-          <span class="font-medium">${{ subtotal }}</span>
+          <span class="font-medium">{{ formatPrice(subtotal) }}</span>
         </div>
         <div class="flex justify-between border-b border-gray-200 pb-4 mb-4">
           <span class="text-gray-600">Phí Vận Chuyển:</span>
@@ -87,7 +151,7 @@ const subtotal = 1750
         </div>
         <div class="flex justify-between mb-8">
           <span class="text-gray-800 font-medium">Thành Tiền:</span>
-          <span class="font-bold text-lg">${{ subtotal }}</span>
+          <span class="font-bold text-lg">{{ formatPrice(subtotal) }}</span>
         </div>
 
         <div class="flex flex-col gap-4 mb-8">
@@ -114,11 +178,10 @@ const subtotal = 1750
           </button>
         </div>
 
-        <button class="bg-blue-600 text-white px-10 py-4 rounded font-medium hover:bg-blue-700 transition w-full md:w-auto">
+        <button @click="placeOrder" class="bg-blue-600 text-white px-10 py-4 rounded font-medium hover:bg-blue-700 transition w-full md:w-auto">
           Xác nhận đặt hàng
         </button>
       </div>
-
     </div>
   </div>
 </template>

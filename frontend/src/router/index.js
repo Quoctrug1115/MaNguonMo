@@ -72,6 +72,12 @@ const router = createRouter({
       component: () => import('../views/ProductsView.vue')
     },
     {
+      path: '/orders',
+      name: 'orders',
+      component: () => import('../views/OrderHistoryView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       // Cú pháp catch-all của Vue Router 4
       path: '/:pathMatch(.*)*',
       name: 'not-found',

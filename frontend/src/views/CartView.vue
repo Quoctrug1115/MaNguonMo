@@ -33,14 +33,26 @@ onMounted(() => {
   fetchCart()
 })
 
-const increaseQty = (item) => item.quantity++
-const decreaseQty = (item) => {
-  if (item.quantity > 1) item.quantity--
+const increaseQty = (item) => {
+  updateQuantity(item, item.quantity + 1);
 }
 
-const removeItem = (cart_item_id) => {
-  // Chú ý: Dùng cart_item_id thay vì id
-  cartItems.value = cartItems.value.filter(item => item.cart_item_id !== cart_item_id)
+const decreaseQty = (item) => {
+  if (item.quantity > 1) {
+    updateQuantity(item, item.quantity - 1);
+  }
+}
+
+const removeItem = async (cart_item_id) => {
+  if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
+
+  try {
+    await axios.delete(`http://localhost:3000/api/cart/item/${cart_item_id}`);
+    // Xóa xong thì lọc mảng cục bộ để biến mất khỏi màn hình ngay
+    cartItems.value = cartItems.value.filter(i => i.cart_item_id !== cart_item_id);
+  } catch (error) {
+    console.error("Lỗi xóa sản phẩm:", error);
+  }
 }
 
 // Tính tổng tiền dựa trên dữ liệu thật
@@ -52,6 +64,22 @@ const subtotal = computed(() => {
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
+
+const updateQuantity = async (item, newQty) => {
+  if (newQty < 1) return; // Không cho giảm xuống dưới 1
+
+  try {
+    await axios.put(`http://localhost:3000/api/cart/item/${item.cart_item_id}`, {
+      quantity: newQty
+    });
+    // Nếu API thành công, cập nhật số lượng hiển thị trên màn hình
+    item.quantity = newQty;
+  } catch (error) {
+    console.error("Lỗi cập nhật số lượng:", error);
+    alert("Không thể cập nhật số lượng!");
+  }
+};
+
 
 </script>
 

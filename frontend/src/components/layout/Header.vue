@@ -56,6 +56,7 @@ const handleLogout = () => {
           <span class="text-sm font-medium text-gray-700">
             Chào, {{ user.full_name }}
           </span>
+          <router-link to="/orders" class="text-sm text-black hover:text-blue-600 hover:underline">Đơn hàng của tôi</router-link>
           <button @click="handleLogout" class="text-sm text-red-500 hover:underline">
             Đăng xuất
           </button>

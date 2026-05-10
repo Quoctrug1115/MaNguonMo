@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { cartCount, fetchCartCount } from '@/store/cartState'
+import { wishlistCount, fetchWishlist } from '@/store/wishlistState'
 
 const router = useRouter()
 const user = ref(null)
@@ -26,7 +27,8 @@ onMounted(() => {
       localStorage.removeItem('user') 
     }
   }
-  fetchCartCount() // Cập nhật số lượng giỏ hàng ngay khi Header load
+  fetchCartCount()
+  fetchWishlist() // Cập nhật số lượng giỏ hàng ngay khi Header load
 })
 // 3. Hàm xử lý khi bấm Đăng xuất
 const handleLogout = () => {
@@ -89,10 +91,14 @@ const handleLogout = () => {
         </div>
 
         <!-- Trái tim (Wishlist) -->
-        <router-link to="/wishlist" class="text-gray-700 hover:text-primary transition">
+        <router-link to="/wishlist" class="text-gray-700 hover:text-red-500 transition relative block">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
           </svg>
+
+          <span v-if="wishlistCount > 0" class="absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            {{ wishlistCount }}
+          </span>
         </router-link>
 
         <!-- Giỏ hàng (Cart) -->

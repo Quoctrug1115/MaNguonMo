@@ -1,95 +1,114 @@
 <script setup>
-import { ref } from 'vue'
-import ProductCard from '@/components/common/ProductCard.vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+import { fetchWishlist } from '@/store/wishlistState' // Để cập nhật số trên Trái tim
+import { fetchCartCount } from '@/store/cartState'   // Để cập nhật số trên Giỏ hàng
 
-// Mock Data: Sản phẩm trong Wishlist
-const wishlistItems = ref([
-  { id: 1, name: 'Túi xách thời trang', price: 960000, originalPrice: 1160000, discount: 35, image: '' },
-  { id: 2, name: 'Loa RGB Gaming', price: 1960000, originalPrice: null, discount: null, image: '' },
-  { id: 3, name: 'Tay cầm DualShock 4', price: 550000, originalPrice: null, discount: null, image: '' },
-  { id: 4, name: 'Balo du lịch', price: 750000, originalPrice: null, discount: null, image: '' }
-])
+const router = useRouter()
+const wishlistItems = ref([])
+const isLoading = ref(true)
 
-// Mock Data: Sản phẩm gợi ý (Just For You)
-const suggestedProducts = ref([
-  { id: 5, name: 'Laptop ASUS ROG', price: 9600000, originalPrice: 11600000, discount: 35, rating: 5, reviews: 65, image: '' },
-  { id: 6, name: 'Màn hình Gaming MSI', price: 1160000, originalPrice: null, discount: null, rating: 4, reviews: 65, image: '' },
-  { id: 7, name: 'Tay cầm chơi game Đỏ', price: 560000, originalPrice: null, discount: null, isNew: true, rating: 5, reviews: 65, image: '' },
-  { id: 8, name: 'Bàn phím cơ RGB', price: 200000, originalPrice: null, discount: null, rating: 4, reviews: 65, image: '' }
-])
+// 1. Tải danh sách yêu thích từ Backend
+const loadWishlist = async () => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) {
+    router.push('/login')
+    return
+  }
+  
+  const user = JSON.parse(userStr)
+  try {
+    const res = await axios.get(`http://localhost:3000/api/wishlist/${user.id}`)
+    wishlistItems.value = res.data.data
+  } catch (error) {
+    console.error("Lỗi tải danh sách yêu thích:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
-// Format tiền tệ VNĐ
+onMounted(() => { loadWishlist() })
+
+// 2. Xóa khỏi danh sách yêu thích
+const removeItem = async (productId) => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  try {
+    await axios.delete(`http://localhost:3000/api/wishlist/${user.id}/${productId}`)
+    
+    // Xóa trực tiếp trên màn hình để không cần load lại trang
+    wishlistItems.value = wishlistItems.value.filter(item => item.product_id !== productId)
+    
+    // Báo cho Trạm phát sóng cập nhật lại số lượng cục đỏ
+    fetchWishlist()
+  } catch (error) {
+    console.error("Lỗi xóa sản phẩm:", error)
+  }
+}
+
+// 3. Thêm thẳng vào Giỏ hàng từ trang Yêu thích
+const moveToCart = async (product) => {
+  const user = JSON.parse(localStorage.getItem('user'))
+  try {
+    const res = await axios.post('http://localhost:3000/api/cart', {
+      user_id: user.id,
+      product_id: product.product_id,
+      quantity: 1
+    })
+    
+    if (res.status === 200) {
+      alert(`🛒 Đã thêm [${product.product_name}] vào giỏ hàng!`)
+      fetchCartCount() // Báo Giỏ hàng nhảy số
+      
+      // Mẹo UX: Thường thêm vào giỏ xong người ta sẽ xóa khỏi wishlist cho gọn
+      removeItem(product.product_id) 
+    }
+  } catch (error) {
+    console.error("Lỗi thêm vào giỏ hàng:", error)
+    alert("Có lỗi xảy ra, không thể thêm vào giỏ hàng lúc này.")
+  }
+}
+
 const formatPrice = (price) => {
-  if (!price) return ''
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
 </script>
 
 <template>
-  <div class="container mx-auto px-4 max-w-6xl py-10 mb-20">
+  <div class="container mx-auto px-4 max-w-5xl py-10 mb-20 text-gray-800">
+    <div class="flex justify-between items-end mb-8">
+      <h1 class="text-3xl font-bold">Mục Yêu Thích</h1>
+      <span class="text-gray-500">Bạn đang có {{ wishlistItems.length }} sản phẩm</span>
+    </div>
+
+    <div v-if="isLoading" class="text-center py-20 text-gray-500">Đang tải dữ liệu...</div>
     
-    <!-- KHU VỰC 1: WISHLIST -->
-    <div class="mb-20">
-      <div class="flex justify-between items-center mb-8">
-        <h2 class="text-xl font-medium text-gray-900">Wishlist ({{ wishlistItems.length }})</h2>
-        <button class="border border-gray-300 px-8 py-3 rounded text-sm font-medium hover:bg-gray-50 transition">
-          Move All To Bag
+    <div v-else-if="wishlistItems.length === 0" class="text-center py-20 border border-gray-200 rounded-lg bg-gray-50">
+      <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      <p class="text-xl text-gray-600 mb-4">Danh sách yêu thích của bạn đang trống.</p>
+      <router-link to="/" class="bg-blue-600 text-white px-6 py-2 rounded font-medium hover:bg-blue-700">Tiếp tục mua sắm</router-link>
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div 
+        v-for="item in wishlistItems" :key="item.product_id" 
+        class="flex items-center gap-4 p-4 border border-gray-200 rounded-lg shadow-sm bg-white relative group"
+      >
+        <button @click="removeItem(item.product_id)" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition" title="Xóa khỏi danh sách">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-      </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <!-- Wishlist Card Custom (Có nút Thùng rác và Thêm vào giỏ hàng cố định) -->
-        <div 
-          v-for="item in wishlistItems" 
-          :key="'wish'+item.id" 
-          class="group relative bg-white border border-gray-100 rounded-lg p-4 hover:shadow-xl transition-all duration-300 flex flex-col h-full"
-        >
-          <div class="relative h-48 bg-[#f5f5f5] rounded-md flex items-center justify-center mb-4 overflow-hidden">
-            <span v-if="item.discount" class="absolute top-3 left-3 bg-danger text-white text-xs font-bold px-2 py-1 rounded z-10">
-              -{{ item.discount }}%
-            </span>
-            <!-- Nút xóa (Thùng rác) -->
-            <button class="absolute top-3 right-3 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 text-gray-600 transition z-10">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-            
-            <img v-if="item.image" :src="item.image" :alt="item.name" class="max-h-full object-contain" />
-            <span v-else class="text-gray-400 text-sm">Hình ảnh</span>
-
-            <!-- Nút Thêm vào giỏ hàng CỐ ĐỊNH ở thẻ này -->
-            <button class="absolute bottom-0 left-0 w-full bg-black text-white py-2 text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Thêm vào giỏ hàng
-            </button>
-          </div>
-
-          <div class="flex flex-col flex-grow">
-            <h3 class="text-sm font-medium text-gray-900 mb-2 line-clamp-2">{{ item.name }}</h3>
-            <div class="flex items-center gap-3 mt-auto">
-              <span class="text-danger font-bold">{{ formatPrice(item.price) }}</span>
-              <span v-if="item.originalPrice" class="text-gray-400 text-xs line-through">{{ formatPrice(item.originalPrice) }}</span>
-            </div>
-          </div>
+        <img :src="item.image_url" class="w-24 h-24 object-cover rounded border border-gray-100" alt="product" />
+        
+        <div class="flex flex-col flex-grow">
+          <h3 class="font-medium text-lg text-gray-900 truncate pr-6" :title="item.product_name">{{ item.product_name }}</h3>
+          <p class="text-red-500 font-bold mt-1">{{ formatPrice(item.price) }}</p>
+          
+          <button @click="moveToCart(item)" class="mt-3 bg-black text-white px-4 py-2 text-sm font-medium rounded hover:bg-gray-800 transition w-max">
+            Thêm vào giỏ hàng
+          </button>
         </div>
       </div>
     </div>
-
-    <!-- KHU VỰC 2: JUST FOR YOU -->
-    <section>
-      <div class="flex justify-between items-center mb-8">
-        <div class="flex items-center gap-4">
-          <div class="w-4 h-8 bg-danger rounded-sm"></div>
-          <h2 class="text-xl font-medium text-gray-900">Just For You</h2>
-        </div>
-        <button class="border border-gray-300 px-8 py-3 rounded text-sm font-medium hover:bg-gray-50 transition">
-          See All
-        </button>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <ProductCard v-for="product in suggestedProducts" :key="'suggest'+product.id" :product="product" />
-      </div>
-    </section>
-
   </div>
 </template>

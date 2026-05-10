@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { fetchCartCount } from '@/store/cartState'
+import { likedProductIds, fetchWishlist } from '@/store/wishlistState'
 
 const router = useRouter()
 
@@ -77,6 +78,39 @@ const handleAddToCart = async () => {
   }
 }
 
+const isLiked = computed(() => {
+  return likedProductIds.value.includes(props.product.id)
+})
+
+const toggleWishlist = async () => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) {
+    alert('Vui lòng đăng nhập để sử dụng tính năng này!')
+    router.push('/login')
+    return
+  }
+
+  const user = JSON.parse(userStr)
+  
+  try {
+    if (isLiked.value) {
+      // Nếu đã thích rồi -> Thực hiện XÓA
+      await axios.delete(`http://localhost:3000/api/wishlist/${user.id}/${props.product.id}`)
+    } else {
+      // Nếu chưa thích -> Thực hiện THÊM
+      await axios.post('http://localhost:3000/api/wishlist', {
+        user_id: user.id,
+        product_id: props.product.id
+      })
+    }
+    
+    // Sau khi gọi API xong, yêu cầu trạm phát sóng cập nhật lại dữ liệu ngay lập tức
+    fetchWishlist()
+    
+  } catch (error) {
+    console.error("Lỗi thao tác Wishlist:", error)
+  }
+}
 </script>
 
 <template>
@@ -99,14 +133,19 @@ const handleAddToCart = async () => {
       </div>
 
       <!-- Actions: Yêu thích & Xem nhanh -->
-      <div class="absolute top-3 right-3 flex flex-col gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <button @click.prevent="addToWishlist" class="bg-white p-1.5 rounded-full shadow hover:bg-gray-100 text-gray-600 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-        </button>
-        <button @click.prevent="viewProductDetails" class="bg-white p-1.5 rounded-full shadow hover:bg-gray-100 text-gray-600 transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-        </button>
-      </div>
+        <div class="absolute top-3 right-3 flex flex-col gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          
+          <button @click.prevent="toggleWishlist" class="bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition">
+            <svg class="w-5 h-5 transition-colors" :class="isLiked ? 'text-red-500 fill-current' : 'text-gray-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </button>
+
+          <button @click.prevent="viewProductDetails" class="bg-white p-1.5 rounded-full shadow hover:bg-gray-100 text-gray-600 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          </button>
+          
+        </div>
 
       <!-- Ảnh sản phẩm (Đã sửa thành image_url) -->
       <img v-if="product.image_url" :src="product.image_url" :alt="product.name" class="max-h-full object-contain group-hover:scale-105 transition-transform duration-500" />

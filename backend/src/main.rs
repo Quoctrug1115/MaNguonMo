@@ -7,8 +7,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::services::ServeDir;
 use crate::handlers::auth::google_login;
 use crate::handlers::order::{checkout, get_user_orders};
-
-// Import thêm thư viện CORS
+use crate::handlers::wishlist::{add_to_wishlist, get_wishlist, remove_from_wishlist};
 use tower_http::cors::{Any, CorsLayer};
 use axum::http::{Method, header};
 
@@ -58,6 +57,9 @@ async fn main() {
         .route("/api/cart/item/:id", delete(handlers::cart::delete_cart_item))
         .route("/api/orders/checkout", post(handlers::order::checkout))
         .route("/api/orders/user/:user_id", get(handlers::order::get_user_orders))
+        .route("/api/wishlist", post(handlers::wishlist::add_to_wishlist))
+        .route("/api/wishlist/:user_id", get(handlers::wishlist::get_wishlist))
+        .route("/api/wishlist/:user_id/:product_id", delete(handlers::wishlist::remove_from_wishlist))
         .layer(cors)
         .with_state(pool);
 

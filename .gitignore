@@ -38,7 +38,7 @@ out/
 
 
 # ### Rust/backend ###
-# backend/target
+backend/target
 
 # ### Vue/frontend ###
 # frontend/node_modules

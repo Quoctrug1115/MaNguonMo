@@ -2,7 +2,8 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProductCard from '@/components/common/ProductCard.vue'
-import SidebarMenu from '@/components/home/SidebarMenu.vue' // <--- Import component của bạn ở đây
+import SidebarMenu from '@/components/home/SidebarMenu.vue'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,34 +12,43 @@ const productList = ref([])
 const isLoading = ref(true)
 const currentCategory = ref(route.query.category || '')
 
+const minPrice = ref(route.query.min_price || '')
+const maxPrice = ref(route.query.max_price || '')
+
 const currentPage = ref(1)
 const totalPages = ref(1)
-const totalItems = ref(0)
-const itemsPerPage = 12
 
 // Hàm gọi API lấy sản phẩm
-const fetchProducts = async (page, categoryId = '') => {
+const fetchProducts = async () => {
   isLoading.value = true
   try {
-    let url = `http://localhost:3000/api/products?page=${page}&limit=${itemsPerPage}`
-    if (categoryId) {
-      url += `&category=${categoryId}`
+    // 1. TẠO PARAMS THÔNG MINH: Chỉ nhét vào những dữ liệu CÓ GIÁ TRỊ, bỏ qua chuỗi rỗng
+    const params = {}
+    
+    if (route.query.search) {
+      params.search = route.query.search
+    }
+    if (route.query.min_price) {
+      params.min_price = route.query.min_price
+    }
+    if (route.query.max_price) {
+      params.max_price = route.query.max_price
+    }
+    // Lưu ý: Đổi thành category_id cho khớp với backend Rust của bạn
+    if (route.query.category) {
+      params.category_id = route.query.category 
     }
 
-    const response = await fetch(url)
-    const result = await response.json()
-
-    if (response.ok) {
-      productList.value = result.data
-      currentPage.value = result.pagination.current_page
-      totalPages.value = result.pagination.total_pages
-      totalItems.value = result.pagination.total_items
-    }
+    // 2. Gọi API. Lúc này URL sẽ rất sạch sẽ, ví dụ chỉ là: ?search=tivi
+    const res = await axios.get('http://localhost:3000/api/products', { params })
+    
+    // 3. Gán danh sách sản phẩm
+    productList.value = res.data.data
+    
   } catch (error) {
-    console.error('Lỗi lấy sản phẩm:', error)
+    console.error("Lỗi tải sản phẩm:", error)
   } finally {
     isLoading.value = false
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
@@ -52,13 +62,24 @@ const goToPage = (page) => {
 watch(() => route.query, (newQuery) => {
   const pageNum = parseInt(newQuery.page) || 1
   currentCategory.value = newQuery.category || ''
-  fetchProducts(pageNum, currentCategory.value)
+  fetchProducts()
 }, { deep: true })
 
 onMounted(() => {
   const initialPage = parseInt(route.query.page) || 1
-  fetchProducts(initialPage, currentCategory.value)
+  fetchProducts()
 })
+
+watch(
+  () => route.query,
+  () => {
+    minPrice.value = route.query.min_price || ''
+    maxPrice.value = route.query.max_price || ''
+    
+    fetchProducts()
+  },
+  { deep: true }
+)
 </script>
 
 <template>

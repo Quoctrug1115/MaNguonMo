@@ -9,7 +9,6 @@ import CategoryList from '@/components/home/CategoryList.vue'
 import ProductCard from '@/components/common/ProductCard.vue'
 import ServiceFeatures from '@/components/home/ServiceFeatures.vue'
 
-// 2. Đổi tên biến thành `productList` để khớp với vòng lặp dưới template
 const productList = ref([])
   
 // 3. Hàm gọi API lấy dữ liệu thực từ Rust

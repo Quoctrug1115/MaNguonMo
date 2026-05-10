@@ -8,17 +8,26 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use axum::extract::Path;
+use uuid::Uuid;
 
 // Import các "Khuôn mẫu" dữ liệu từ thư mục models
 use crate::models::product::{CreateProductRequest, Product};
 use crate::models::user::Claims; // Import "Anh bảo vệ"
 
-// 1. Thêm trường category vào để hứng dữ liệu từ Frontend
+// Cấu trúc nhận dữ liệu phân trang từ Frontend
 #[derive(Debug, Deserialize)]
 pub struct PaginationQuery {
     pub page: Option<i64>,
     pub limit: Option<i64>,
     pub category: Option<String>,
+}
+// cấu trúc nhận dữ liệu Lọc & Tìm kiếm từ Frontend
+#[derive(Deserialize, Default)]
+pub struct ProductFilter {
+    pub search: Option<String>,
+    pub category_id: Option<Uuid>,
+    pub min_price: Option<f64>,
+    pub max_price: Option<f64>,
 }
 
 // ==============================================================
@@ -26,69 +35,55 @@ pub struct PaginationQuery {
 // ==============================================================
 pub async fn get_products(
     State(pool): State<PgPool>,
-    Query(query): Query<PaginationQuery>,
-) -> (StatusCode, Json<Value>) {
+    Query(filter): Query<ProductFilter>, // Nhận biến filter từ URL (?search=...&min_price=...)
+) -> Result<Json<Value>, (StatusCode, String)> {
 
-    let page = query.page.unwrap_or(1);
-    let limit = query.limit.unwrap_or(12);
-    let offset = (page - 1) * limit;
+    // Xử lý từ khóa tìm kiếm (Nếu không gõ gì thì tìm chuỗi rỗng '%')
+    let search_term = filter.search.unwrap_or_default();
+    let search_pattern = format!("%{}%", search_term);
 
-    // 1. FIX LỖI MOVE: Biến Option<String> thành Option<&str> để xài được nhiều lần
-    let category_filter = query.category.as_deref();
-
-    // 2. Đếm số lượng sản phẩm
-    let count_result = sqlx::query!(
+    // Dùng tuyệt chiêu COALESCE để bỏ qua điều kiện nếu Frontend không truyền vào
+    let products_result = sqlx::query!(
         r#"
-        SELECT COUNT(*) as count
+        SELECT id, name, description, price::float8, stock_quantity, category_id, image_url, created_at
         FROM products
-        -- FIX LỖI ÉP KIỂU: Thêm ::varchar vào đuôi $1
-        WHERE $1::varchar IS NULL OR category_id = (SELECT id FROM categories WHERE slug = $1::varchar LIMIT 1)
-        "#,
-        category_filter // Dùng lần 1
-    )
-        .fetch_one(&pool)
-        .await;
-
-    let total_items = count_result.unwrap().count.unwrap_or(0);
-    let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
-
-    // 3. Lấy dữ liệu sản phẩm
-    let products_result = sqlx::query_as!(
-        Product,
-        r#"
-        SELECT id, category_id, name, description, price, original_price, discount_percent, stock_quantity, image_url, is_new, rating, reviews_count, created_at, updated_at
-        FROM products
-        -- FIX LỖI ÉP KIỂU: Thêm ::varchar vào đuôi $3
-        WHERE $3::varchar IS NULL OR category_id = (SELECT id FROM categories WHERE slug = $3::varchar LIMIT 1)
+        WHERE name ILIKE $1
+          AND ($2::uuid IS NULL OR category_id = $2)
+          AND ($3::float8 IS NULL OR price >= $3)
+          AND ($4::float8 IS NULL OR price <= $4)
         ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
         "#,
-        limit,
-        offset,
-        category_filter // Dùng lần 2 thoải mái không bị lỗi
+        search_pattern,
+        filter.category_id,
+        filter.min_price,
+        filter.max_price
     )
-        .fetch_all(&pool)
-        .await;
+    .fetch_all(&pool)
+    .await;
 
-    match products_result {
-        Ok(products) => (
-            StatusCode::OK,
-            Json(json!({
-                "message": "Lấy danh sách sản phẩm thành công",
-                "data": products,
-                "pagination": {
-                    "current_page": page,
-                    "limit": limit,
-                    "total_items": total_items,
-                    "total_pages": total_pages
-                }
-            })),
-        ),
+    let products = match products_result {
+        Ok(p) => p,
         Err(e) => {
-            tracing::error!("Lỗi DB: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Lỗi hệ thống" })))
+            tracing::error!("Lỗi tải sản phẩm: {:?}", e);
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, "Lỗi hệ thống".to_string()));
         }
-    }
+    };
+
+    // Đóng gói trả về JSON
+    let items_json: Vec<serde_json::Value> = products.into_iter().map(|item| {
+        json!({
+            "id": item.id,
+            "name": item.name,
+            "description": item.description,
+            "price": item.price,
+            "stock_quantity": item.stock_quantity,
+            "category_id": item.category_id,
+            "image_url": item.image_url,
+            "created_at": item.created_at
+        })
+    }).collect();
+
+    Ok(Json(json!({ "data": items_json })))
 }
 
 // ==============================================================

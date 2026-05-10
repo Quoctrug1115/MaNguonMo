@@ -4,9 +4,19 @@ import { useRouter } from 'vue-router'
 import { cartCount, fetchCartCount } from '@/store/cartState'
 import { wishlistCount, fetchWishlist } from '@/store/wishlistState'
 
+const searchQuery = ref('')
 const router = useRouter()
 const user = ref(null)
 
+
+const handleSearch = () => {
+  if (searchQuery.value.trim() !== '') {
+    router.push({ path: '/products', query: { search: searchQuery.value.trim() } })
+  } else {
+    // Nếu xóa trắng ô tìm kiếm và enter -> Trở về danh sách gốc
+    router.push({ path: '/products' }) 
+  }
+}
 
 // Quản lý trạng thái mở/đóng của dropdown tài khoản
 const isAccountMenuOpen = ref(false)
@@ -79,15 +89,20 @@ const handleLogout = () => {
       <div class="flex items-center gap-5">
         
         <!-- Search Bar -->
-        <div class="hidden lg:flex items-center relative mr-2">
+        <div class="flex items-center border border-gray-300 rounded px-3 py-1.5 bg-gray-50">
           <input 
+            v-model="searchQuery"
+            @keyup.enter="handleSearch"
             type="text" 
-            placeholder="Tìm kiếm điều bạn cần" 
-            class="bg-[#f5f5f5] text-sm rounded-md pl-4 pr-10 py-2 focus:outline-none focus:ring-1 focus:ring-primary w-[220px]"
-          />
-          <button class="absolute right-3 text-gray-500 hover:text-primary">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            placeholder="Tìm kiếm điều bạn cần..." 
+            class="w-full bg-transparent outline-none text-sm text-gray-700"/>
+          
+          <button @click="handleSearch" class="text-gray-500 hover:text-blue-600 ml-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
           </button>
+          
         </div>
 
         <!-- Trái tim (Wishlist) -->

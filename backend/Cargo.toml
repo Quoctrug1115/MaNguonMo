@@ -28,3 +28,4 @@ tower-http = { version = "0.5", features = ["cors", "fs"] }
 
 jsonwebtoken = "9.2"
 reqwest = { version = "0.13.3", features = ["json"] }
+hash = "0.3.0"

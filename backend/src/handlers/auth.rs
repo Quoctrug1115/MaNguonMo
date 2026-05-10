@@ -1,13 +1,13 @@
 use axum::{extract::State, http::StatusCode, Json};
-use bcrypt::{hash, verify, DEFAULT_COST};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use std::env;
 use jsonwebtoken::{encode, Header, EncodingKey};
 use chrono::{Utc, Duration};
-use axum::response::IntoResponse;
 use uuid::Uuid;
-use serde::{Deserialize, Serialize, ser};
+use serde::{Deserialize};
+use bcrypt::{hash as bcrypt_hash, verify, DEFAULT_COST};
+use axum::extract::Extension;
 
 use crate::models::user::{RegisterRequest, LoginRequest, Claims, User};
 
@@ -32,7 +32,7 @@ pub async fn register(
     }
 
     // 2. Mã hóa mật khẩu với bcrypt
-    let password_hash = match hash(&payload.password, DEFAULT_COST) {
+    let password_hash = match bcrypt_hash(&payload.password, DEFAULT_COST) {
         Ok(h) => h,
         Err(_) => {
             return (
@@ -149,60 +149,105 @@ pub async fn login(
 
 // API Lấy thông tin Profile (Được bảo vệ bởi Extractor Claims)
 // SỬA LẠI: Trả về trực tiếp (StatusCode, Json<Value>) cho đồng bộ với register và login
-pub async fn get_my_profile(
-    claims: Claims,
+#[derive(Deserialize)]
+pub struct UpdateProfileRequest {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub current_password: Option<String>,
+    pub new_password: Option<String>,
+}
+
+pub async fn get_profile(
     State(pool): State<PgPool>,
-) -> (StatusCode, Json<Value>) {
-
-    // 1. Chuyển ID từ dạng Chuỗi sang dạng UUID để query Database
-    let user_id = match Uuid::parse_str(&claims.sub) {
-        Ok(id) => id,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": "ID người dùng không hợp lệ" })),
-            );
-        }
-    };
-
-    // 2. Lấy thông tin mới nhất của User từ Database
-    let user_result = sqlx::query_as!(
-        User,
-        "SELECT id, full_name, email, password_hash, phone, address, role, created_at, updated_at FROM users WHERE id = $1",
+    Extension(user_id): Extension<Uuid>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    
+    let user = sqlx::query!(
+        r#"SELECT id, full_name, email, phone, address FROM users WHERE id = $1"#,
         user_id
     )
-        .fetch_optional(&pool)
-        .await;
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi DB".to_string()))?;
 
-    // 3. Trả kết quả về cho Frontend (Bỏ hết các đuôi .into_response() rườm rà)
-    match user_result {
-        Ok(Some(user)) => (
-            StatusCode::OK,
-            Json(json!({
-                "message": "Lấy thông tin thành công!",
-                "user": {
-                    "id": user.id,
-                    "full_name": user.full_name,
-                    "email": user.email,
-                    "phone": user.phone,
-                    "address": user.address,
-                    "role": user.role,
-                    "created_at": user.created_at
-                }
-            })),
-        ),
+    match user {
+        Some(u) => Ok(Json(json!({
+            "id": u.id,
+            "full_name": u.full_name,
+            "email": u.email,
+            "phone": u.phone,
+            "address": u.address
+        }))),
+        None => Err((StatusCode::NOT_FOUND, "Không tìm thấy user".to_string())),
+    }
+}
 
-        Ok(None) => (
-            StatusCode::NOT_FOUND,
-            Json(json!({ "error": "Không tìm thấy tài khoản người dùng này trong hệ thống" })),
-        ),
+// 2. API Cập nhật thông tin Cá nhân (PUT)
+pub async fn update_user_profile(
+    State(pool): State<PgPool>,
+    Extension(user_id): Extension<Uuid>, 
+    Json(payload): Json<UpdateProfileRequest>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    
+    // 1. XỬ LÝ ĐỔI MẬT KHẨU (Nếu người dùng có điền vào ô mật khẩu)
+    let mut new_hashed_password: Option<String> = None;
 
+    if payload.current_password.is_some() || payload.new_password.is_some() {
+        // Bắt buộc phải nhập đủ cả cũ và mới
+        let curr_pwd = payload.current_password.as_ref()
+            .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu cũ!".to_string()))?;
+        let new_pwd = payload.new_password.as_ref()
+            .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu mới!".to_string()))?;
+
+        // Lấy mật khẩu đã mã hóa (hash) hiện tại từ Database để đối chiếu
+        // (Lưu ý: Nếu cột mật khẩu của bạn tên khác, ví dụ 'password_hash', hãy đổi lại nhé)
+        let user_db = sqlx::query!("SELECT password_hash FROM users WHERE id = $1", user_id)
+            .fetch_one(&pool)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi truy xuất dữ liệu".to_string()))?;
+
+        // So sánh mật khẩu cũ người dùng nhập với mật khẩu trong Database
+        let db_hash = user_db.password_hash.as_deref().unwrap_or("");
+        let is_valid = verify(curr_pwd, db_hash).unwrap_or(false);
+        if !is_valid {
+            return Err((StatusCode::BAD_REQUEST, "Mật khẩu cũ không chính xác!".to_string()));
+        }
+
+        // Nếu khớp, tiến hành băm (hash) mật khẩu mới
+        let hashed = bcrypt_hash(new_pwd, DEFAULT_COST)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi mã hóa mật khẩu".to_string()))?;
+        
+        new_hashed_password = Some(hashed);
+    }
+
+    // 2. CẬP NHẬT DỮ LIỆU VÀO DATABASE
+    let update_result = sqlx::query!(
+        r#"
+        UPDATE users 
+        SET first_name = COALESCE($1, first_name),
+            last_name = COALESCE($2, last_name),
+            email = COALESCE($3, email),
+            address = COALESCE($4, address),
+            password_hash = COALESCE($5, password_hash)
+        WHERE id = $6
+        "#,
+        payload.first_name,
+        payload.last_name,
+        payload.email,
+        payload.address,
+        new_hashed_password, // Ghi đè mật khẩu mới (Nếu biến này là None, COALESCE sẽ giữ nguyên mật khẩu cũ)
+        user_id
+    )
+    .execute(&pool)
+    .await;
+
+    match update_result {
+        Ok(_) => Ok(Json(json!({ "message": "Cập nhật thành công!" }))),
         Err(e) => {
-            tracing::error!("Lỗi DB khi lấy profile: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "Lỗi hệ thống khi lấy thông tin" })),
-            )
+            tracing::error!("Lỗi cập nhật user: {:?}", e);
+            Err((StatusCode::INTERNAL_SERVER_ERROR, "Không thể cập nhật hồ sơ".to_string()))
         }
     }
 }

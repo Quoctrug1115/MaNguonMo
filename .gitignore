@@ -35,3 +35,25 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+### Rust/backend ###
+backend/target
+
+### Vue/frontend ###
+frontend/node_modules
+frontend/.vscode
+
+### env files ###
+backend/.env
+frontend/.env
+
+### db files ###
+cart_and_checkout.sql
+dienmay_db_update_thongsokythuat.sql
+dienmay_db.sql
+update_table_user.sql
+
+### images ###
+images_db/
+images_product/

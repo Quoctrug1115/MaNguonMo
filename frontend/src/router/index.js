@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import HomeView from '../views/client/homepage/HomeView.vue'
 
 const router = createRouter({
   // Sử dụng Web History API để URL trông sạch đẹp (không có dấu #)
@@ -13,73 +13,67 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      // Lazy-loading: Component chỉ được tải khi người dùng vào trang này (tối ưu hiệu năng)
-      component: () => import('../views/LoginView.vue')
+      component: () => import('../views/auth/LoginView.vue')
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/ProfileView.vue')
+      component: () => import('../views/client/user/ProfileView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/RegisterView.vue')
+      component: () => import('../views/auth/RegisterView.vue')
     },
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: () => import('../views/ForgotPasswordView.vue')
+      component: () => import('../views/auth/ForgotPasswordView.vue')
     },
     {
       path: '/wishlist',
       name: 'wishlist',
-      component: () => import('../views/WishlistView.vue'),
+      component: () => import('../views/client/user/WishlistView.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/cart',
       name: 'cart',
-      component: () => import('../views/CartView.vue'),
+      component: () => import('../views/client/order/CartView.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/checkout',
       name: 'checkout',
-      component: () => import('../views/CheckoutView.vue'),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/account',
-      name: 'account',
-      component: () => import('../views/AccountView.vue'),
+      component: () => import('../views/client/orderandcart/CheckoutView.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/about',
       name: 'about',
-      component: () => import('../views/AboutView.vue')
+      component: () => import('../views/client/homepage/AboutView.vue')
     },
     {
       path: '/contact',
       name: 'contact',
-      component: () => import('../views/ContactView.vue')
+      component: () => import('../views/client/homepage/ContactView.vue')
     },
     {
       path: '/product/:id',
       name: 'product-detail',
-      component: () => import('../views/ProductDetailView.vue'),
+      component: () => import('../views/client/product/ProductDetailView.vue'),
       props: true // Cho phép truyền ID như một prop vào component
     },
     {
       path: '/products',
       name: 'products',
-      component: () => import('../views/ProductsView.vue')
+      component: () => import('../views/client/product/ProductsView.vue')
     },
     {
       path: '/orders',
       name: 'orders',
-      component: () => import('../views/OrderHistoryView.vue'),
+      component: () => import('../views/client/order/OrderHistoryView.vue'),
       meta: { requiresAuth: true }
     },
     {

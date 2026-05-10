@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::{State, Path}, http::StatusCode, Json};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use std::env;
@@ -7,8 +7,6 @@ use chrono::{Utc, Duration};
 use uuid::Uuid;
 use serde::{Deserialize};
 use bcrypt::{hash as bcrypt_hash, verify, DEFAULT_COST};
-use axum::extract::Extension;
-
 use crate::models::user::{RegisterRequest, LoginRequest, Claims, User};
 
 pub async fn register(
@@ -66,7 +64,6 @@ pub async fn register(
         }
     }
 }
-
 
 pub async fn login(
     State(pool): State<PgPool>,
@@ -147,8 +144,6 @@ pub async fn login(
         })))
 }
 
-// API Lấy thông tin Profile (Được bảo vệ bởi Extractor Claims)
-// SỬA LẠI: Trả về trực tiếp (StatusCode, Json<Value>) cho đồng bộ với register và login
 #[derive(Deserialize)]
 pub struct UpdateProfileRequest {
     pub first_name: Option<String>,
@@ -161,7 +156,7 @@ pub struct UpdateProfileRequest {
 
 pub async fn get_profile(
     State(pool): State<PgPool>,
-    Extension(user_id): Extension<Uuid>,
+    Path(user_id): Path<Uuid>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     
     let user = sqlx::query!(
@@ -187,42 +182,47 @@ pub async fn get_profile(
 // 2. API Cập nhật thông tin Cá nhân (PUT)
 pub async fn update_user_profile(
     State(pool): State<PgPool>,
-    Extension(user_id): Extension<Uuid>, 
+    Path(user_id): Path<Uuid>,
     Json(payload): Json<UpdateProfileRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     
-    // 1. XỬ LÝ ĐỔI MẬT KHẨU (Nếu người dùng có điền vào ô mật khẩu)
+    // 1. Lấy thông tin user hiện tại từ DB để xem họ ĐÃ CÓ mật khẩu chưa
+    let user_db = sqlx::query!("SELECT password_hash FROM users WHERE id = $1", user_id)
+        .fetch_one(&pool)
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi truy xuất dữ liệu".to_string()))?;
+
     let mut new_hashed_password: Option<String> = None;
 
-    if payload.current_password.is_some() || payload.new_password.is_some() {
-        // Bắt buộc phải nhập đủ cả cũ và mới
-        let curr_pwd = payload.current_password.as_ref()
-            .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu cũ!".to_string()))?;
-        let new_pwd = payload.new_password.as_ref()
-            .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu mới!".to_string()))?;
-
-        // Lấy mật khẩu đã mã hóa (hash) hiện tại từ Database để đối chiếu
-        // (Lưu ý: Nếu cột mật khẩu của bạn tên khác, ví dụ 'password_hash', hãy đổi lại nhé)
-        let user_db = sqlx::query!("SELECT password_hash FROM users WHERE id = $1", user_id)
-            .fetch_one(&pool)
-            .await
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi truy xuất dữ liệu".to_string()))?;
-
-        // So sánh mật khẩu cũ người dùng nhập với mật khẩu trong Database
-        let db_hash = user_db.password_hash.as_deref().unwrap_or("");
-        let is_valid = verify(curr_pwd, db_hash).unwrap_or(false);
-        if !is_valid {
-            return Err((StatusCode::BAD_REQUEST, "Mật khẩu cũ không chính xác!".to_string()));
+    // 2. Nếu người dùng muốn đổi/tạo mật khẩu (có nhập ô Mật khẩu mới)
+    if let Some(new_pwd) = &payload.new_password {
+        
+        // Kiểm tra xem User này đã có password trong DB chưa
+        match &user_db.password_hash {
+            Some(existing_hash) if !existing_hash.is_empty() => {
+                // TRƯỜNG HỢP 1: TÀI KHOẢN THƯỜNG (Đã có pass) -> BẮT BUỘC kiểm tra mật khẩu cũ
+                let curr_pwd = payload.current_password.as_ref()
+                    .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu cũ!".to_string()))?;
+                
+                let is_valid = verify(curr_pwd, existing_hash).unwrap_or(false);
+                if !is_valid {
+                    return Err((StatusCode::BAD_REQUEST, "Mật khẩu cũ không chính xác!".to_string()));
+                }
+            },
+            _ => {
+                // TRƯỜNG HỢP 2: TÀI KHOẢN GOOGLE (Chưa có pass) -> BỎ QUA check mật khẩu cũ
+                // Tự động cho phép đi tiếp xuống bước mã hóa luôn!
+            }
         }
 
-        // Nếu khớp, tiến hành băm (hash) mật khẩu mới
+        // Mã hóa mật khẩu mới
         let hashed = bcrypt_hash(new_pwd, DEFAULT_COST)
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi mã hóa mật khẩu".to_string()))?;
         
         new_hashed_password = Some(hashed);
     }
 
-    // 2. CẬP NHẬT DỮ LIỆU VÀO DATABASE
+    // 3. Câu lệnh UPDATE giữ nguyên như cũ...
     let update_result = sqlx::query!(
         r#"
         UPDATE users 
@@ -237,7 +237,7 @@ pub async fn update_user_profile(
         payload.last_name,
         payload.email,
         payload.address,
-        new_hashed_password, // Ghi đè mật khẩu mới (Nếu biến này là None, COALESCE sẽ giữ nguyên mật khẩu cũ)
+        new_hashed_password, 
         user_id
     )
     .execute(&pool)

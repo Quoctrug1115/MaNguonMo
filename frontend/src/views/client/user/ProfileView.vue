@@ -25,42 +25,76 @@ const getAuthHeaders = () => {
 // Lấy thông tin cá nhân lúc vừa vào trang
 const fetchProfile = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/profile', getAuthHeaders())
-    // Giả sử API trả về các field này
+
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!storedUser.id) return;
+
+    const res = await axios.get(`http://localhost:3000/api/profile/${storedUser.id}`, getAuthHeaders())
+
     if (res.data) {
-      user.value = {
-        first_name: res.data.first_name || '',
-        last_name: res.data.last_name || '',
+        // Tách chuỗi bằng dấu cách
+        const nameParts = (res.data.full_name || '').split(' ');
+        const firstName = nameParts.length > 1 ? nameParts.pop() : (res.data.full_name || '');
+        const lastName = nameParts.join(' ');
+
+        user.value = {
+        first_name: firstName,
+        last_name: lastName,
         email: res.data.email || '',
         address: res.data.address || ''
-      }
+        }
     }
-  } catch (error) {
-    console.error("Lỗi lấy thông tin:", error)
-  }
+    } catch (error) {
+        console.error("Lỗi lấy thông tin:", error)
+    }
 }
 
 // Lưu thay đổi
 const handleSave = async () => {
-  try {
-    await axios.put('http://localhost:3000/api/profile', {
-      first_name: user.value.first_name,
-      last_name: user.value.last_name,
-      email: user.value.email,
-      address: user.value.address,
-      // Truyền thêm password nếu bạn có logic đổi mật khẩu ở Backend
-    }, getAuthHeaders())
+    try {
+        if (password.value.new && password.value.new !== password.value.confirm) {
+        alert("Mật khẩu nhập lại không khớp!");
+        return;
+        }
+
+    const payload = {
+        first_name: user.value.first_name,
+        last_name: user.value.last_name,
+        email: user.value.email,
+        address: user.value.address,
+        }
+
+    if (password.value.new) {
+        payload.new_password = password.value.new;
+        if (password.value.old) {
+            payload.current_password = password.value.old;
+        }
+    }
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+    await axios.put(`http://localhost:3000/api/profile/${storedUser.id}`, payload, getAuthHeaders())
     
     alert('Cập nhật hồ sơ thành công!')
-    password.value = { old: '', new: '', confirm: '' } // Xóa trắng ô password sau khi lưu
-  } catch (error) {
-    console.error("Lỗi cập nhật:", error)
-    alert('Có lỗi xảy ra khi cập nhật!')
-  }
+    password.value = { old: '', new: '', confirm: '' }
+
+    storedUser.first_name = user.value.first_name;
+    storedUser.last_name = user.value.last_name;
+    // Gộp lại thành full_name nếu Header của bạn đang dùng full_name
+    storedUser.full_name = `${user.value.last_name} ${user.value.first_name}`.trim();
+    localStorage.setItem('user', JSON.stringify(storedUser));
+
+    window.location.reload();
+
+    } catch (error) {
+        // Hiển thị lỗi từ Backend gửi về (ví dụ: "Mật khẩu cũ không đúng")
+        const errorMsg = error.response?.data || 'Có lỗi xảy ra khi cập nhật!';
+        console.error("Lỗi cập nhật:", errorMsg);
+        alert(errorMsg);
+    }
 }
 
 onMounted(() => {
-  fetchProfile()
+    fetchProfile()
 })
 </script>
 
@@ -86,7 +120,7 @@ onMounted(() => {
               <h3 class="font-bold text-gray-900 mb-3">Quản lý tài khoản</h3>
               <ul class="ml-6 space-y-2 text-sm text-gray-500">
                 <li class="text-red-500 font-medium cursor-pointer">Tài khoản</li>
-                <li class="hover:text-red-500 cursor-pointer transition-colors">địa chỉ nhận hàng</li>
+                <li class="hover:text-red-500 cursor-pointer transition-colors">Địa chỉ nhận hàng</li>
                 <li class="hover:text-red-500 cursor-pointer transition-colors">Phương thức thanh toán</li>
               </ul>
             </div>

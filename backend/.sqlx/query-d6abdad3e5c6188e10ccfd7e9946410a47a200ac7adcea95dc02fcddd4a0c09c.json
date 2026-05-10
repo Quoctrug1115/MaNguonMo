@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT spec_key, spec_value FROM product_specifications WHERE product_id = $1 ORDER BY created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "spec_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "spec_value",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "d6abdad3e5c6188e10ccfd7e9946410a47a200ac7adcea95dc02fcddd4a0c09c"
+}

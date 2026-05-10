@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { fetchCartCount } from '../store/cartState'
+import { fetchCartCount } from '../../../store/cartState'
 
 const router = useRouter()
 const cartItems = ref([])

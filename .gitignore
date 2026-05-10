@@ -37,8 +37,10 @@ out/
 .vscode/
 
 
+
 # ### Rust/backend ###
 backend/target
+backend/.sqlx
 
 # ### Vue/frontend ###
 # frontend/node_modules

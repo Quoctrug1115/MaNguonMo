@@ -5,6 +5,7 @@ use std::env;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::services::ServeDir;
+use axum::extract::DefaultBodyLimit;
 use crate::handlers::auth::google_login;
 use crate::handlers::order::{checkout, get_user_orders};
 use crate::handlers::wishlist::{add_to_wishlist, get_wishlist, remove_from_wishlist};
@@ -63,6 +64,9 @@ async fn main() {
         .route("/api/profile/:user_id", get(handlers::auth::get_profile).put(handlers::auth::update_user_profile))
         .route("/api/admin/product-variants", get(handlers::product::get_product_variants))
         .route("/api/admin/products", post(handlers::product::create_product))
+        .route("/api/admin/upload", post(handlers::upload::upload_images))
+        .nest_service("/uploads", ServeDir::new("uploads"))
+        .layer(DefaultBodyLimit::max(52_428_800))
         .layer(cors)
         .with_state(pool);
 

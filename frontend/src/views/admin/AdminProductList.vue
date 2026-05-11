@@ -91,15 +91,15 @@ const prevPage = () => {
           </svg>
           
           <input 
-            v-model="searchQuery" 
-            type="text" 
-            placeholder="Tìm kiếm tên sản phẩm..." 
+            v-model="searchQuery"
+            type="text"
+            placeholder="Tìm kiếm tên sản phẩm..."
             class="flex-grow bg-transparent text-sm text-gray-700 placeholder:text-gray-400 outline-none h-full" 
           />
         </div>
-        <button class="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-blue-700 transition-colors h-[46px]">
-          + Thêm Sản Phẩm Mới
-        </button>
+            <button @click="$router.push('/admin/create-product')" class="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-blue-700 transition-colors">
+                + Thêm Sản Phẩm Mới
+            </button>
       </div>
     </div>
 

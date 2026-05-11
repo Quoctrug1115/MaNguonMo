@@ -11,8 +11,8 @@ use axum::extract::Path;
 use uuid::Uuid;
 use std::collections::HashMap;
 // Import các "Khuôn mẫu" dữ liệu từ thư mục models
-use crate::models::product::{CreateProductRequest, Product};
-use crate::models::user::Claims; // Import "Anh bảo vệ"
+use crate::models::product::{CreateProductRequest, Product, VariantReq};
+use crate::models::user::Claims;
 
 
 // cấu trúc nhận dữ liệu Lọc & Tìm kiếm từ Frontend
@@ -24,9 +24,7 @@ pub struct ProductFilter {
     pub max_price: Option<f64>,
 }
 
-// ==============================================================
-// API Lấy danh sách sản phẩm (Public - Có phân trang & Lọc Category)
-// ==============================================================
+
 pub async fn get_products(
     State(pool): State<PgPool>,
     Query(filter): Query<ProductFilter>, // Nhận biến filter từ URL (?search=...&min_price=...)
@@ -80,15 +78,27 @@ pub async fn get_products(
     Ok(Json(json!({ "data": items_json })))
 }
 
-// ==============================================================
-// API Thêm sản phẩm mới (Private - Bắt buộc có thẻ Claims)
-// ==============================================================
+
 pub async fn create_product(
     claims: Claims,
     State(pool): State<PgPool>,
     Json(payload): Json<CreateProductRequest>,
 ) -> (StatusCode, Json<Value>) {
 
+    // 1. MỞ GIAO DỊCH (TRANSACTION)
+    let mut tx = match pool.begin().await {
+        Ok(transaction) => transaction,
+        Err(e) => {
+            tracing::error!("Lỗi mở transaction: {:?}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Lỗi kết nối cơ sở dữ liệu" })),
+            );
+        }
+    };
+
+    // 2. THÊM SẢN PHẨM GỐC VÀO BẢNG PRODUCTS
+    // Chú ý: Đổi .fetch_one(&pool) thành .fetch_one(&mut *tx)
     let insert_result = sqlx::query_as!(
         Product,
         r#"
@@ -112,27 +122,70 @@ pub async fn create_product(
         payload.rating,
         payload.reviews_count
     )
-        .fetch_one(&pool)
-        .await;
+    .fetch_one(&mut *tx)
+    .await;
 
-    match insert_result {
-        Ok(new_product) => (
-            StatusCode::CREATED,
-            Json(json!({
-                "message": "Thêm sản phẩm thành công!",
-                "product": new_product,
-                "added_by": claims.email
-            })),
-        ),
+    // Kiểm tra kết quả lưu sản phẩm
+    let new_product = match insert_result {
+        Ok(p) => p,
         Err(e) => {
-            tracing::error!("Lỗi DB khi thêm sản phẩm: {:?}", e);
-            (
+            tracing::error!("Lỗi DB khi thêm sản phẩm gốc: {:?}", e);
+            return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Không thể lưu sản phẩm vào kho" })),
+            );
+        }
+    };
+
+    // 3. THÊM BIẾN THỂ (VARIANTS) NẾU CÓ
+    if let Some(variants) = payload.variants {
+        for variant in variants {
+            let variant_insert = sqlx::query!(
+                r#"
+                INSERT INTO product_variants (product_id, color_name, color_hex, stock, image_url)
+                VALUES ($1, $2, $3, $4, $5)
+                "#,
+                new_product.id, // Lấy ID của sản phẩm vừa tạo ở bước 2
+                variant.color_name,
+                variant.color_hex,
+                variant.stock,
+                variant.image_url
             )
+            .execute(&mut *tx)
+            .await;
+
+            // Nếu có bất kỳ màu nào lưu thất bại, trả về lỗi ngay lập tức
+            // Lúc này tx sẽ bị drop và toàn bộ lệnh insert_product ở trên sẽ bị rollback
+            if let Err(e) = variant_insert {
+                tracing::error!("Lỗi DB khi thêm biến thể màu sắc: {:?}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Không thể lưu biến thể sản phẩm" })),
+                );
+            }
         }
     }
+
+    // 4. LƯU CHÍNH THỨC (COMMIT TRANSACTION)
+    if let Err(e) = tx.commit().await {
+        tracing::error!("Lỗi commit transaction: {:?}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Lỗi hệ thống khi hoàn tất quá trình lưu trữ" })),
+        );
+    }
+
+    // 5. TRẢ VỀ THÀNH CÔNG
+    (
+        StatusCode::CREATED,
+        Json(json!({
+            "message": "Thêm sản phẩm thành công!",
+            "product": new_product,
+            "added_by": claims.email
+        })),
+    )
 }
+
 
 #[derive(Serialize)]
 pub struct ProductSpec {
@@ -255,7 +308,7 @@ pub async fn get_product_variants(
                 "price": row.price,
                 "main_image": row.main_image,
                 "total_stock": 0,
-                "variants": [] 
+                "variants": []
             })
         });
 

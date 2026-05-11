@@ -94,6 +94,11 @@ const router = createRouter({
           path: 'manage-products',
           name: 'admin-product-list',
           component: () => import('../views/admin/AdminProductList.vue')
+        },
+        { 
+          path: 'create-product',
+          name: 'admin-product-create',
+          component: () => import('../views/admin/AdminProductCreate.vue')
         }
       ]
     },

@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 
 const products = ref([])
 const isLoading = ref(true)
 
-// --- STATE PHÂN TRANG ---
+// --- STATE TÌM KIẾM & PHÂN TRANG ---
+const searchQuery = ref('') // Biến lưu từ khóa tìm kiếm
 const currentPage = ref(1)
 const itemsPerPage = 9
 
@@ -27,24 +28,6 @@ const fetchProducts = async () => {
 
 onMounted(() => { fetchProducts() })
 
-// --- LOGIC PHÂN TRANG ---
-const paginatedProducts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return products.value.slice(start, end)
-})
-
-const totalPages = computed(() => {
-  return Math.ceil(products.value.length / itemsPerPage)
-})
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++
-}
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--
-}
-
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
@@ -59,6 +42,41 @@ const translateCategory = (categoryName) => {
   }
   return dictionary[categoryName] || categoryName || 'Chưa phân loại'
 }
+
+// --- LOGIC TÌM KIẾM ---
+const filteredProducts = computed(() => {
+  if (!searchQuery.value.trim()) return products.value
+  
+  const lowerCaseQuery = searchQuery.value.toLowerCase().trim()
+  
+  return products.value.filter(p => {
+    const nameMatch = p.product_name.toLowerCase().includes(lowerCaseQuery)
+    const categoryMatch = translateCategory(p.category).toLowerCase().includes(lowerCaseQuery)
+    return nameMatch || categoryMatch
+  })
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+// --- LOGIC PHÂN TRANG ---
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredProducts.value.slice(start, end)
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredProducts.value.length / itemsPerPage)
+})
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--
+}
 </script>
 
 <template>
@@ -66,14 +84,20 @@ const translateCategory = (categoryName) => {
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-[28px] font-bold text-gray-800 tracking-wide">Quản Lý Sản Phẩm</h2>
       
-      <div class="flex gap-4">
-        <div class="relative w-[300px]">
-          <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          </span>
-          <input type="text" placeholder="Tìm kiếm tên sản phẩm..." class="w-full bg-white border border-gray-200 rounded-full pl-11 pr-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors shadow-sm" />
+      <div class="flex gap-4 items-center">
+        <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-full w-[300px] h-[46px] px-4 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+          <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          
+          <input 
+            v-model="searchQuery" 
+            type="text" 
+            placeholder="Tìm kiếm tên sản phẩm..." 
+            class="flex-grow bg-transparent text-sm text-gray-700 placeholder:text-gray-400 outline-none h-full" 
+          />
         </div>
-        <button class="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-blue-700 transition-colors">
+        <button class="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-blue-700 transition-colors h-[46px]">
           + Thêm Sản Phẩm Mới
         </button>
       </div>
@@ -83,6 +107,12 @@ const translateCategory = (categoryName) => {
       
       <div v-if="isLoading" class="flex justify-center py-20">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+      
+      <div v-else-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-500">
+        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="text-lg font-medium">Không tìm thấy sản phẩm nào</p>
+        <p class="text-sm">Hãy thử tìm với từ khóa khác (Ví dụ: Apple, Tivi...)</p>
       </div>
 
       <table v-else class="w-full text-left border-collapse">
@@ -119,11 +149,11 @@ const translateCategory = (categoryName) => {
                 <div 
                   v-for="variant in product.variants" 
                   :key="'stock-' + variant.variant_id" 
-                  class="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded shadow-sm"
+                  class="flex items-center gap-1.5 bg-white border border-gray-200 px-2 py-1 rounded shadow-sm"
                 >
                   <span 
                     :style="{ 'background-color': variant.color_hex ? variant.color_hex.trim() : '#cccccc' }" 
-                    class="w-3 h-3 block rounded-full border border-gray-300"
+                    class="w-2.5 h-2.5 block rounded-full border border-gray-300"
                   ></span>
                   <span :class="variant.stock < 10 ? 'text-red-500' : 'text-gray-700'" class="text-xs font-bold">
                     {{ variant.stock }}
@@ -133,7 +163,7 @@ const translateCategory = (categoryName) => {
             </td>
 
             <td class="px-6 py-4">
-              <div class="flex gap-3 items-center">
+              <div class="flex gap-2.5 items-center">
                 <span v-if="product.variants.length === 0" class="text-xs text-gray-400 italic">-</span>
                 <span 
                   v-else 
@@ -142,7 +172,7 @@ const translateCategory = (categoryName) => {
                   :style="{ 'background-color': variant.color_hex ? variant.color_hex.trim() : '#cccccc' }" 
                   @mouseover="product.display_image = variant.image_url || product.main_image"
                   @mouseleave="product.display_image = product.main_image"
-                  class="w-5 h-5 block rounded-full border border-gray-200 shadow-inner cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-lg transition-all"
+                  class="w-5 h-5 block rounded-full shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-lg transition-all border border-gray-200"
                   :title="'Mã màu: ' + (variant.color_hex || 'Trống')"
                 ></span>
               </div>
@@ -163,11 +193,11 @@ const translateCategory = (categoryName) => {
         </tbody>
       </table>
       
-      <div class="px-6 py-4 flex justify-between items-center border-t border-gray-100 bg-white">
+      <div v-if="!isLoading && filteredProducts.length > 0" class="px-6 py-4 flex justify-between items-center border-t border-gray-100 bg-white">
         <p class="text-sm font-medium text-gray-500">
-          Hiển thị <span class="text-gray-800 font-bold">{{ products.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1 }}</span> 
-          - <span class="text-gray-800 font-bold">{{ Math.min(currentPage * itemsPerPage, products.length) }}</span> 
-          trong tổng số <span class="text-gray-800 font-bold">{{ products.length }}</span> sản phẩm
+          Hiển thị <span class="text-gray-800 font-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> 
+          - <span class="text-gray-800 font-bold">{{ Math.min(currentPage * itemsPerPage, filteredProducts.length) }}</span> 
+          trong tổng số <span class="text-gray-800 font-bold">{{ filteredProducts.length }}</span> kết quả
         </p>
         <div class="flex gap-2">
           <button 

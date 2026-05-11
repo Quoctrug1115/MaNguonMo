@@ -59,7 +59,7 @@ const formatPrice = (price) => {
         <h2 class="text-xl font-bold text-danger">Flash Sales</h2>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        <ProductCard v-for="product in (productList && productList.length ? productList.slice().reverse() : [])" :key="'best'+product.id" :product="product" />
+        <ProductCard v-for="product in (productList && productList.length ? productList.slice().reverse().slice(0, 5) : [])" :key="'best'+product.id" :product="product" />
       </div>
       <div class="flex justify-center mt-10">
         <router-link to="/products" class="bg-danger text-white px-10 py-3 rounded text-sm font-medium hover:bg-red-600 transition">Xem Tất Cả Sản Phẩm</router-link>
@@ -77,7 +77,7 @@ const formatPrice = (price) => {
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         <!-- Render ngược mảng để thấy sự khác biệt của data -->
-        <ProductCard v-for="product in productList.slice().reverse()" :key="'best'+product.id" :product="product" />
+        <ProductCard v-for="product in productList.slice().reverse().slice(0, 5)" :key="'best'+product.id" :product="product" />
       </div>
     </section>
 
@@ -102,7 +102,7 @@ const formatPrice = (price) => {
         <h2 class="text-xl font-bold text-primary">Sản Phẩm Nổi Bật</h2>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        <ProductCard v-for="product in productList" :key="'feat'+product.id" :product="product" />
+        <ProductCard v-for="product in productList.slice().reverse().slice(0, 5)" :key="'feat'+product.id" :product="product" />
       </div>
       <div class="flex justify-center mt-10">
         <button class="bg-primary text-white px-10 py-3 rounded text-sm font-medium hover:bg-blue-600 transition">Xem Thêm Sản Phẩm</button>

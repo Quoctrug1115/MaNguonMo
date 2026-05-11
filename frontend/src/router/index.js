@@ -40,7 +40,7 @@ const router = createRouter({
     {
       path: '/cart',
       name: 'cart',
-      component: () => import('../views/client/order/CartView.vue'),
+      component: () => import('../views/client/orderandcart/CartView.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -73,8 +73,24 @@ const router = createRouter({
     {
       path: '/orders',
       name: 'orders',
-      component: () => import('../views/client/order/OrderHistoryView.vue'),
+      component: () => import('../views/client/user/OrderHistoryView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin',
+      component: () => import('../layouts/AdminLayout.vue'), // Trỏ vào Layout Admin
+      children: [
+        {
+          path: '', // Khi đường dẫn là /admin, tự động render Dashboard
+          name: 'admin-dashboard',
+          component: () => import('../views/admin/AdminDashboard.vue')
+        },
+        {
+          path: 'products',
+          name: 'admin-products',
+          component: () => import('../views/admin/AdminProductsView.vue')
+        }
+      ]
     },
     {
       // Cú pháp catch-all của Vue Router 4

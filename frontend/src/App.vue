@@ -1,6 +1,14 @@
 <script setup>
 import TheHeader from './components/layout/Header.vue'
 import TheFooter from './components/layout/Footer.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/admin')
+})
 </script>
 
 <template>
@@ -8,7 +16,7 @@ import TheFooter from './components/layout/Footer.vue'
   <div class="flex flex-col min-h-screen">
     
     <!-- Header dùng chung -->
-    <TheHeader />
+    <TheHeader v-if="!isAdminRoute"/>
 
     <!-- Khu vực hiển thị nội dung các trang -->
     <main class="flex-grow">
@@ -16,7 +24,7 @@ import TheFooter from './components/layout/Footer.vue'
     </main>
 
     <!-- Footer dùng chung -->
-    <TheFooter />
+    <TheFooter v-if="!isAdminRoute"/>
     
   </div>
 </template>

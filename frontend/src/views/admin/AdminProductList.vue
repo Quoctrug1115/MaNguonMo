@@ -1,0 +1,194 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+
+const products = ref([])
+const isLoading = ref(true)
+
+// --- STATE PHÂN TRANG ---
+const currentPage = ref(1)
+const itemsPerPage = 9
+
+const fetchProducts = async () => {
+  try {
+    isLoading.value = true
+    const res = await axios.get('http://localhost:3000/api/admin/product-variants')
+    
+    products.value = (res.data.data || res.data).map(p => ({
+      ...p,
+      display_image: p.main_image
+    }))
+  } catch (error) {
+    console.error("Lỗi:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => { fetchProducts() })
+
+// --- LOGIC PHÂN TRANG ---
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return products.value.slice(start, end)
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(products.value.length / itemsPerPage)
+})
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--
+}
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+}
+
+const translateCategory = (categoryName) => {
+  const dictionary = {
+    'Digital Product': 'Thiết Bị Số',
+    'Fashion': 'Thời Trang',
+    'Mobile': 'Điện Thoại',
+    'Electronic': 'Điện Máy',
+    'Gaming': 'Máy Tính & Game',
+  }
+  return dictionary[categoryName] || categoryName || 'Chưa phân loại'
+}
+</script>
+
+<template>
+  <div class="p-8 max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-[28px] font-bold text-gray-800 tracking-wide">Quản Lý Sản Phẩm</h2>
+      
+      <div class="flex gap-4">
+        <div class="relative w-[300px]">
+          <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </span>
+          <input type="text" placeholder="Tìm kiếm tên sản phẩm..." class="w-full bg-white border border-gray-200 rounded-full pl-11 pr-4 py-2.5 text-sm outline-none focus:border-blue-500 transition-colors shadow-sm" />
+        </div>
+        <button class="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-blue-700 transition-colors">
+          + Thêm Sản Phẩm Mới
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+      
+      <div v-if="isLoading" class="flex justify-center py-20">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+
+      <table v-else class="w-full text-left border-collapse">
+        <thead>
+          <tr class="text-gray-800 text-sm font-bold border-b border-gray-100 bg-gray-50/50">
+            <th class="px-6 py-5 w-24 text-center">Hình Ảnh</th>
+            <th class="px-6 py-5">Tên Sản Phẩm</th>
+            <th class="px-6 py-5">Danh Mục</th>
+            <th class="px-6 py-5">Giá Bán</th>
+            <th class="px-6 py-5">Tổng Tồn</th>
+            <th class="px-6 py-5">Tồn Kho (Màu)</th>
+            <th class="px-6 py-5">Màu Sắc</th>
+            <th class="px-6 py-5 text-center">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-sm font-medium text-gray-600">
+          
+          <tr v-for="product in paginatedProducts" :key="product.id" class="hover:bg-gray-50 transition-colors">
+            
+            <td class="px-6 py-4 flex justify-center">
+              <img :src="product.display_image || 'https://via.placeholder.com/150'" class="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm transition-all duration-300 bg-white" />
+            </td>
+            
+            <td class="px-6 py-4 text-gray-800">{{ product.product_name }}</td>
+            <td class="px-6 py-4">{{ translateCategory(product.category) }}</td>
+            <td class="px-6 py-4 font-bold text-gray-700">{{ formatPrice(product.price) }}</td>
+            <td class="px-6 py-4">
+              <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md font-bold">{{ product.total_stock }}</span>
+            </td>
+            
+            <td class="px-6 py-4">
+              <span v-if="product.variants.length === 0" class="text-xs text-gray-400 italic">Chưa có dữ liệu</span>
+              <div v-else class="flex flex-wrap gap-2">
+                <div 
+                  v-for="variant in product.variants" 
+                  :key="'stock-' + variant.variant_id" 
+                  class="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded shadow-sm"
+                >
+                  <span 
+                    :style="{ 'background-color': variant.color_hex ? variant.color_hex.trim() : '#cccccc' }" 
+                    class="w-3 h-3 block rounded-full border border-gray-300"
+                  ></span>
+                  <span :class="variant.stock < 10 ? 'text-red-500' : 'text-gray-700'" class="text-xs font-bold">
+                    {{ variant.stock }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <td class="px-6 py-4">
+              <div class="flex gap-3 items-center">
+                <span v-if="product.variants.length === 0" class="text-xs text-gray-400 italic">-</span>
+                <span 
+                  v-else 
+                  v-for="variant in product.variants" 
+                  :key="variant.variant_id" 
+                  :style="{ 'background-color': variant.color_hex ? variant.color_hex.trim() : '#cccccc' }" 
+                  @mouseover="product.display_image = variant.image_url || product.main_image"
+                  @mouseleave="product.display_image = product.main_image"
+                  class="w-5 h-5 block rounded-full border border-gray-200 shadow-inner cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-lg transition-all"
+                  :title="'Mã màu: ' + (variant.color_hex || 'Trống')"
+                ></span>
+              </div>
+            </td>
+            
+            <td class="px-6 py-4">
+              <div class="flex justify-center gap-2">
+                <button title="Chỉnh sửa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-colors bg-white shadow-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+                <button title="Xóa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors bg-white shadow-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+      <div class="px-6 py-4 flex justify-between items-center border-t border-gray-100 bg-white">
+        <p class="text-sm font-medium text-gray-500">
+          Hiển thị <span class="text-gray-800 font-bold">{{ products.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1 }}</span> 
+          - <span class="text-gray-800 font-bold">{{ Math.min(currentPage * itemsPerPage, products.length) }}</span> 
+          trong tổng số <span class="text-gray-800 font-bold">{{ products.length }}</span> sản phẩm
+        </p>
+        <div class="flex gap-2">
+          <button 
+            @click="prevPage" 
+            :disabled="currentPage === 1"
+            :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'"
+            class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 font-bold transition-colors shadow-sm bg-white"
+          >
+            &lt;
+          </button>
+          <button 
+            @click="nextPage" 
+            :disabled="currentPage === totalPages || totalPages === 0"
+            :class="currentPage === totalPages || totalPages === 0 ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'"
+            class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 font-bold transition-colors shadow-sm bg-white"
+          >
+            &gt;
+          </button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</template>

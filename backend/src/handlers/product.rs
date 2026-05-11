@@ -9,18 +9,12 @@ use serde_json::{json, Value};
 use sqlx::PgPool;
 use axum::extract::Path;
 use uuid::Uuid;
-
+use std::collections::HashMap;
 // Import các "Khuôn mẫu" dữ liệu từ thư mục models
 use crate::models::product::{CreateProductRequest, Product};
 use crate::models::user::Claims; // Import "Anh bảo vệ"
 
-// Cấu trúc nhận dữ liệu phân trang từ Frontend
-#[derive(Debug, Deserialize)]
-pub struct PaginationQuery {
-    pub page: Option<i64>,
-    pub limit: Option<i64>,
-    pub category: Option<String>,
-}
+
 // cấu trúc nhận dữ liệu Lọc & Tìm kiếm từ Frontend
 #[derive(Deserialize, Default)]
 pub struct ProductFilter {
@@ -87,7 +81,7 @@ pub async fn get_products(
 }
 
 // ==============================================================
-// 2. API Thêm sản phẩm mới (Private - Bắt buộc có thẻ Claims)
+// API Thêm sản phẩm mới (Private - Bắt buộc có thẻ Claims)
 // ==============================================================
 pub async fn create_product(
     claims: Claims,
@@ -219,4 +213,76 @@ pub async fn get_product_by_id(
             (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Lỗi hệ thống" })))
         }
     }
+}
+
+
+pub async fn get_product_variants(
+    State(pool): State<PgPool>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    
+    // THÊM DẤU ? ĐỂ SQLX KHÔNG BỊ CRASH KHI GẶP NULL TỪ LEFT JOIN
+    let rows = sqlx::query!(
+        r#"
+        SELECT 
+            p.id::TEXT as "product_id!", 
+            p.name as "product_name!", 
+            p.price::FLOAT as "price!", 
+            p.image_url as "main_image?",
+            v.id::TEXT as "variant_id?",
+            v.color_hex as "color_hex?",
+            v.stock as "stock?",
+            v.image_url as "variant_image?"
+        FROM products p
+        LEFT JOIN product_variants v ON p.id = v.product_id
+        ORDER BY p.name ASC
+        "#
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        println!("Lỗi Database: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Lỗi DB: {}", e))
+    })?;
+
+    let mut product_map: HashMap<String, Value> = HashMap::new();
+
+    for row in rows {
+        let entry = product_map.entry(row.product_id.clone()).or_insert_with(|| {
+            json!({
+                "id": row.product_id,
+                "product_name": row.product_name,
+                "category": "Digital Product", // Đặt tạm để giống Figma
+                "price": row.price,
+                "main_image": row.main_image,
+                "total_stock": 0,
+                "variants": [] 
+            })
+        });
+
+        // Xử lý an toàn với Option
+        if let Some(color_hex) = row.color_hex {
+            let stock = row.stock.unwrap_or(0);
+            
+            // Cộng dồn tổng tồn kho (Piece)
+            let current_total = entry["total_stock"].as_i64().unwrap_or(0);
+            entry["total_stock"] = json!(current_total + stock as i64);
+            
+            entry["variants"].as_array_mut().unwrap().push(json!({
+                "variant_id": row.variant_id,
+                "color_hex": color_hex,
+                "stock": stock,
+                "image_url": row.variant_image
+            }));
+        }
+    }
+
+    let mut data: Vec<Value> = product_map.into_values().collect();
+    // Sắp xếp lại theo tên bảng chữ cái
+    data.sort_by(|a, b| {
+        let name_a = a["product_name"].as_str().unwrap_or("");
+        let name_b = b["product_name"].as_str().unwrap_or("");
+        name_a.cmp(name_b)
+    });
+
+    Ok(Json(json!({ "status": "success", "data": data })))
 }

@@ -61,6 +61,7 @@ async fn main() {
         .route("/api/wishlist/:user_id", get(handlers::wishlist::get_wishlist))
         .route("/api/wishlist/:user_id/:product_id", delete(handlers::wishlist::remove_from_wishlist))
         .route("/api/profile/:user_id", get(handlers::auth::get_profile).put(handlers::auth::update_user_profile))
+        .route("/api/admin/product-variants", get(handlers::product::get_product_variants))
         .layer(cors)
         .with_state(pool);
 

@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
+const router = useRouter()
 const products = ref([])
 const isLoading = ref(true)
 
@@ -77,6 +79,34 @@ const nextPage = () => {
 const prevPage = () => {
   if (currentPage.value > 1) currentPage.value--
 }
+
+// Hàm Xóa Sản Phẩm
+const handleDelete = async (id) => {
+  // 1. Bật cảnh báo (Bảo vệ người dùng khỏi việc bấm nhầm)
+  const isConfirm = confirm("⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa sản phẩm này không?\n\nMọi hình ảnh, màu sắc và thông số sẽ bị xóa vĩnh viễn!")
+  
+  if (!isConfirm) return; // Nếu bấm Cancel thì thoát luôn
+
+  try {
+    const token = localStorage.getItem('token')
+    
+    // 2. Gọi API Xóa
+    await axios.delete(`http://localhost:3000/api/admin/products/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
+    alert('✅ Đã xóa sản phẩm thành công!')
+    
+    // 3. Gọi lại hàm lấy danh sách sản phẩm để làm mới lại bảng (Bạn hãy đổi tên hàm cho khớp với code hiện tại của bạn)
+    fetchProducts() 
+    
+  } catch (error) {
+    if (error.response?.status === 403) alert('Bạn không có quyền Admin!')
+    else alert('Lỗi khi xóa sản phẩm. Vui lòng kiểm tra Console.')
+    console.error(error)
+  }
+}
+
 </script>
 
 <template>
@@ -180,10 +210,10 @@ const prevPage = () => {
             
             <td class="px-6 py-4">
               <div class="flex justify-center gap-2">
-                <button title="Chỉnh sửa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-colors bg-white shadow-sm">
+                <button @click="router.push(`/admin/edit-product/${product.id}`)" title="Chỉnh sửa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 rounded-lg transition-colors bg-white shadow-sm">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 </button>
-                <button title="Xóa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors bg-white shadow-sm">
+                <button @click="handleDelete(product.id)" title="Xóa" class="p-2.5 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors bg-white shadow-sm">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>

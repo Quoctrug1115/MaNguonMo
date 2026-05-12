@@ -210,6 +210,174 @@ pub async fn create_product(
     )
 }
 
+pub async fn delete_product(
+    AdminClaims(_claims): AdminClaims, // Bảo vệ bằng quyền Admin
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>, // Lấy ID sản phẩm từ trên URL xuống
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    
+    // 1. Mở giao dịch
+    let mut tx = pool.begin().await.map_err(|e| {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi DB: {}", e)})))
+    })?;
+
+    // 2. Xóa dữ liệu ở các bảng con (Biến thể & Thông số) TRƯỚC
+    sqlx::query!("DELETE FROM product_specifications WHERE product_id = $1", id)
+        .execute(&mut *tx).await.map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi xóa thông số: {}", e)})))
+        })?;
+
+    sqlx::query!("DELETE FROM product_variants WHERE product_id = $1", id)
+        .execute(&mut *tx).await.map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi xóa biến thể: {}", e)})))
+        })?;
+
+    // 3. Cuối cùng, xóa Sản phẩm gốc ở bảng cha
+    let result = sqlx::query!("DELETE FROM products WHERE id = $1", id)
+        .execute(&mut *tx).await.map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi xóa sản phẩm: {}", e)})))
+        })?;
+
+    // 4. Chốt giao dịch
+    tx.commit().await.map_err(|_| {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi hệ thống khi chốt lệnh xóa"})))
+    })?;
+
+    // Kiểm tra xem có thực sự xóa được dòng nào không (nhỡ ID không tồn tại)
+    if result.rows_affected() == 0 {
+        return Err((
+            StatusCode::NOT_FOUND, 
+            Json(json!({"error": "Không tìm thấy sản phẩm này trong kho!"}))
+        ));
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "🗑️ Đã xóa sản phẩm và các dữ liệu liên quan thành công!"
+    })))
+}
+
+// API: GET /api/admin/products/:id
+pub async fn get_product_detail(
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    
+    // 1. Lấy thông tin cơ bản
+    let product = sqlx::query!("SELECT * FROM products WHERE id = $1", id)
+        .fetch_optional(&pool).await.map_err(|e| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()})))
+        })?;
+
+    let product = match product {
+        Some(p) => p,
+        None => return Err((StatusCode::NOT_FOUND, Json(json!({"error": "Không tìm thấy sản phẩm"})))),
+    };
+
+    // 2. Lấy danh sách Biến thể
+    let variants = sqlx::query!(
+        "SELECT id, color_name, color_hex, stock, image_url FROM product_variants WHERE product_id = $1", 
+        id
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap_or_default();
+    // 3. Lấy danh sách Thông số
+    let specs = sqlx::query!("SELECT spec_name, spec_value FROM product_specifications WHERE product_id = $1", id)
+        .fetch_all(&pool).await.unwrap_or_default();
+
+    // 4. Ghép tất cả lại thành 1 cục JSON trả về Frontend
+    Ok(Json(json!({
+        "status": "success",
+        "data": {
+            "product": {
+                "id": product.id,
+                "category_id": product.category_id,
+                "name": product.name,
+                "description": product.description,
+                "price": product.price,
+                "original_price": product.original_price,
+                "discount_percent": product.discount_percent,
+                "stock_quantity": product.stock_quantity,
+                "image_url": product.image_url,
+                "is_new": product.is_new
+            },
+            "variants": variants.into_iter().map(|v| json!({
+                "id": v.id,
+                "color_name": v.color_name,
+                "color_hex": v.color_hex,
+                "stock": v.stock,
+                "image_url": v.image_url
+            })).collect::<Vec<_>>(),
+            "specifications": specs.into_iter().map(|s| json!({
+                "spec_name": s.spec_name,
+                "spec_value": s.spec_value
+            })).collect::<Vec<_>>()
+        }
+    })))
+}
+
+
+// API: PUT /api/admin/products/:id
+pub async fn update_product(
+    AdminClaims(_claims): AdminClaims,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<CreateProductRequest>, // Tái sử dụng Struct cũ
+) -> (StatusCode, Json<Value>) {
+    let mut tx = match pool.begin().await {
+        Ok(t) => t,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi DB"}))),
+    };
+
+    // 1. Cập nhật thông tin cơ bản của Sản phẩm
+    let update_res = sqlx::query!(
+        r#"
+        UPDATE products 
+        SET category_id = $1, name = $2, description = $3, price = $4, original_price = $5, 
+            discount_percent = $6, stock_quantity = $7, image_url = $8, is_new = $9
+        WHERE id = $10
+        "#,
+        payload.category_id, payload.name, payload.description, payload.price, 
+        payload.original_price, payload.discount_percent, payload.stock_quantity, 
+        payload.image_url, payload.is_new, id
+    )
+    .execute(&mut *tx).await;
+
+    if update_res.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Không thể cập nhật sản phẩm"})));
+    }
+
+    // 2. XÓA SẠCH biến thể và thông số cũ của sản phẩm này
+    let _ = sqlx::query!("DELETE FROM product_variants WHERE product_id = $1", id).execute(&mut *tx).await;
+    let _ = sqlx::query!("DELETE FROM product_specifications WHERE product_id = $1", id).execute(&mut *tx).await;
+
+    // 3. XÂY LẠI: Chèn toàn bộ Biến thể mới
+    if let Some(variants) = payload.variants {
+        for v in variants {
+            let _ = sqlx::query!(
+                "INSERT INTO product_variants (product_id, color_name, color_hex, stock, image_url) VALUES ($1, $2, $3, $4, $5)",
+                id, v.color_name, v.color_hex, v.stock, v.image_url
+            ).execute(&mut *tx).await;
+        }
+    }
+
+    // 4. XÂY LẠI: Chèn toàn bộ Thông số mới
+    if let Some(specs) = payload.specifications {
+        for s in specs {
+            let _ = sqlx::query!(
+                "INSERT INTO product_specifications (product_id, spec_name, spec_value) VALUES ($1, $2, $3)",
+                id, s.spec_name, s.spec_value
+            ).execute(&mut *tx).await;
+        }
+    }
+
+    if tx.commit().await.is_ok() {
+        (StatusCode::OK, Json(json!({"message": "Cập nhật sản phẩm thành công!"})))
+    } else {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi khi chốt dữ liệu"})))
+    }
+}
 
 #[derive(Serialize)]
 pub struct ProductSpec {

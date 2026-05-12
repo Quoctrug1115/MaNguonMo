@@ -99,7 +99,13 @@ const router = createRouter({
           path: 'create-product',
           name: 'admin-product-create',
           component: () => import('../views/admin/AdminProductCreate.vue')
-        }
+        },
+        {
+          path: 'edit-product/:id', // Có tham số :id
+          name: 'admin-product-edit',
+          component: () => import('../views/admin/AdminProductEdit.vue'),
+          meta: { requiresAdmin: true }
+        },
       ]
     },
     {

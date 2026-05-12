@@ -10,7 +10,8 @@ use crate::handlers::auth::google_login;
 use crate::handlers::order::{checkout, get_user_orders};
 use crate::handlers::wishlist::{add_to_wishlist, get_wishlist, remove_from_wishlist};
 use tower_http::cors::{Any, CorsLayer};
-use axum::http::{Method, header};
+use axum::http::{Method};
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 
 mod models;
 mod handlers;
@@ -40,7 +41,7 @@ async fn main() {
     let cors = CorsLayer::new()
         .allow_origin(Any) // Trong môi trường dev, cho phép mọi origin gọi API
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_headers(Any);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 
     let app = Router::new()
         .route("/health", get(health_check))
@@ -61,6 +62,7 @@ async fn main() {
         .route("/api/wishlist", post(handlers::wishlist::add_to_wishlist))
         .route("/api/wishlist/:user_id", get(handlers::wishlist::get_wishlist))
         .route("/api/wishlist/:user_id/:product_id", delete(handlers::wishlist::remove_from_wishlist))
+        .route("/api/categories", get(handlers::category::get_all_categories))
         .route("/api/profile/:user_id", get(handlers::auth::get_profile).put(handlers::auth::update_user_profile))
         .route("/api/admin/product-variants", get(handlers::product::get_product_variants))
         .route("/api/admin/products", post(handlers::product::create_product))

@@ -4,3 +4,4 @@ pub mod cart;
 pub mod order;
 pub mod wishlist;
 pub mod upload;
+pub mod category;

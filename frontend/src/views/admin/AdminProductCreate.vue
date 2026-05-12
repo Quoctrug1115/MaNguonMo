@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -7,6 +7,20 @@ const router = useRouter()
 const isLoading = ref(false)
 const isUploading = ref(false)
 const uploadedGallery = ref([])
+const categoriesList = ref([])
+
+const fetchCategories = async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/api/categories')
+    categoriesList.value = res.data // Gán dữ liệu trả về vào mảng
+  } catch (error) {
+    console.error("Lỗi khi tải danh mục:", error)
+  }
+}
+
+onMounted(() => {
+  fetchCategories()
+})
 
 // 1. Thông tin cơ bản
 const product = ref({
@@ -100,21 +114,77 @@ const submitProduct = async () => {
   try {
     isLoading.value = true
     
-    // Lọc bỏ các thông số bị bỏ trống để tránh rác database
-    const validSpecs = specifications.value.filter(s => s.spec_name.trim() !== '' && s.spec_value.trim() !== '')
-
-    const payload = {
-      ...product.value,
-      discount_percent: product.value.original_price ? Math.round((1 - product.value.price / product.value.original_price) * 100) : null,
-      variants: variants.value,
-      specifications: validSpecs // <--- Đẩy mảng thông số lên Backend
+    // 1. LẤY TOKEN
+    const token = localStorage.getItem('token')
+    if (!token) {
+      alert('Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại!')
+      return
     }
 
-    await axios.post('http://localhost:3000/api/admin/products', payload)
+    // 2. Lọc thông số rỗng
+    const validSpecs = specifications.value.filter(s => s.spec_name.trim() !== '' && s.spec_value.trim() !== '')
+    // 3. Đóng gói dữ liệu an toàn
+const payload = {
+      name: product.value.name,
+      description: product.value.description || null,
+      
+      // Ép kiểu chắc chắn là số
+      price: Number(product.value.price) || 0,
+      original_price: product.value.original_price ? Number(product.value.original_price) : null,
+      stock_quantity: Number(product.value.stock_quantity) || 0,
+      
+      image_url: product.value.image_url || null,
+      is_new: Boolean(product.value.is_new),
+      rating: null,
+      reviews_count: null,
+      
+      // MẸO: Kiểm tra sơ bộ xem có đúng định dạng độ dài của UUID không (36 ký tự)
+      // Nếu nhập linh tinh, hệ thống sẽ tự động chuyển thành null để không bị lỗi 422
+      category_id: (product.value.category_id && product.value.category_id.length === 36) 
+                   ? product.value.category_id 
+                   : null,
+                   
+      discount_percent: product.value.original_price 
+                        ? Math.round((1 - Number(product.value.price) / Number(product.value.original_price)) * 100) 
+                        : null,
+                        
+      // Ép kiểu các biến thể màu sắc
+      variants: variants.value.map(v => ({
+          color_name: v.color_name,
+          color_hex: v.color_hex,
+          stock: Number(v.stock) || 0,
+          image_url: v.image_url || null
+      })),
+      
+      specifications: validSpecs.length > 0 ? validSpecs : null
+    }
+
+    // Console log ra để bạn tự kiểm tra trước khi gửi
+    console.log("Dữ liệu chuẩn bị gửi đi:", payload);
+
+    // GỌI API
+    await axios.post('http://localhost:3000/api/admin/products', payload, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
     alert('🎉 Thêm sản phẩm thành công!')
     router.push('/admin/manage-products')
+    
   } catch (error) {
-    alert('Thêm thất bại. Vui lòng kiểm tra lại Console!')
+    // 5. BẮT LỖI THÔNG MINH ĐỂ DỄ DÀNG SỬA CHỮA
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 401) {
+         alert('Token không hợp lệ hoặc đã cũ. Vui lòng ĐĂNG XUẤT và ĐĂNG NHẬP LẠI!')
+      } else if (status === 403) {
+         alert('Truy cập bị từ chối! Tài khoản này không có quyền Admin.')
+      } else {
+         // Hiển thị trực tiếp lỗi từ Backend Rust trả về (nếu có)
+         alert(`Lỗi hệ thống: ${error.response.data?.error || 'Vui lòng kiểm tra lại dữ liệu nhập'}`)
+      }
+    } else {
+      alert('Không thể kết nối đến máy chủ!')
+    }
     console.error(error)
   } finally {
     isLoading.value = false
@@ -178,8 +248,11 @@ const submitProduct = async () => {
                 <input v-model="product.name" type="text" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-blue-500">
               </div>
               <div>
-                <label class="block text-[13px] font-semibold text-gray-700 mb-1">Category ID (UUID)</label>
-                <input v-model="product.category_id" type="text" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-blue-500">
+                <label class="block text-[13px] font-semibold text-gray-700 mb-1">Danh mục sản phẩm</label>
+                  <select v-model="product.category_id" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-blue-500 cursor-pointer">
+                    <option :value="null">Vui lòng chọn danh mục</option>
+                    <option v-for="cat in categoriesList" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
               </div>
             </div>
 

@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const products = ref([])
 const isLoading = ref(true)
 
@@ -77,7 +79,7 @@ const formatPrice = (price) => {
         </div>
 
         <div class="mt-auto">
-          <button class="bg-[#F5F6FA] text-gray-700 hover:bg-gray-200 hover:text-black px-6 py-2 rounded-lg text-sm font-medium transition-colors">
+          <button @click="router.push(`/admin/edit-product/${product.id}`)" class="bg-[#F5F6FA] text-gray-700 hover:bg-gray-200 hover:text-black px-6 py-2 rounded-lg text-sm font-medium transition-colors">
             Chỉnh sửa
           </button>
         </div>

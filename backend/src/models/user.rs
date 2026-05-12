@@ -2,13 +2,15 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-// NẠP THÊM VŨ KHÍ CHO BẢO VỆ (Thư viện dùng cho Extractor)
+
 use axum::{
     async_trait,
     extract::FromRequestParts,
     http::{header, request::Parts, StatusCode},
+    Json
 };
 use jsonwebtoken::{decode, DecodingKey, Validation};
+use serde_json::{json, Value};
 
 
 // Struct này dùng để map với dữ liệu lấy từ Database
@@ -47,6 +49,47 @@ pub struct Claims {
     pub email: String,
     pub role: String,
     pub exp: usize,  // Expiration time (Thời gian hết hạn)
+}
+
+pub struct AdminClaims (pub Claims);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for AdminClaims
+where
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, Json<Value>);
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        // 1. Trích xuất Claims bình thường (Giống như cách bạn đang làm cho User)
+        let claims = match Claims::from_request_parts(parts, state).await {
+            Ok(c) => c,
+            Err(_) => {
+                // Nếu user gửi token bậy hoặc chưa đăng nhập
+                return Err((
+                    StatusCode::UNAUTHORIZED,
+                    Json(json!({
+                        "error": "Unauthorized",
+                        "message": "Bạn chưa đăng nhập hoặc Token đã hết hạn!"
+                    })),
+                ));
+            }
+        };
+        // 2. KIỂM TRA QUYỀN (RBAC)
+        // Nếu role không phải là admin, đá văng ra ngay lập tức với lỗi 403 Forbidden
+        if claims.role.to_lowercase() != "admin" {
+            return Err((
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "Forbidden",
+                    "message": "Truy cập bị từ chối! Chỉ quản trị viên mới có thể thực hiện hành động này."
+                })),
+            ));
+        }
+
+        // 3. Nếu đúng là Admin, cho phép đi tiếp
+        Ok(AdminClaims(claims))
+    }
 }
 
 #[async_trait]

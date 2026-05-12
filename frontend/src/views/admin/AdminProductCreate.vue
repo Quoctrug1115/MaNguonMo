@@ -6,8 +6,9 @@ import axios from 'axios'
 const router = useRouter()
 const isLoading = ref(false)
 const isUploading = ref(false)
-const uploadedGallery = ref([]) // Mảng chứa ảnh đã upload
+const uploadedGallery = ref([])
 
+// 1. Thông tin cơ bản
 const product = ref({
   category_id: null,
   name: '',
@@ -22,24 +23,53 @@ const product = ref({
   reviews_count: null
 })
 
+// 2. Dữ liệu Biến thể màu
 const variants = ref([
   { color_name: '', color_hex: '#000000', stock: 0, image_url: '' }
 ])
-
 const addVariant = () => { variants.value.push({ color_name: '', color_hex: '#ffffff', stock: 0, image_url: '' }) }
 const removeVariant = (index) => { if (variants.value.length > 1) variants.value.splice(index, 1); else alert('Phải có ít nhất 1 màu!') }
 
-// ==========================================
-// HÀM XỬ LÝ UPLOAD NHIỀU ẢNH
-// ==========================================
+// 3. DỮ LIỆU THÔNG SỐ KỸ THUẬT (MỚI)
+const specifications = ref([
+  { spec_name: '', spec_value: '' }
+])
+const addSpecification = () => { specifications.value.push({ spec_name: '', spec_value: '' }) }
+const removeSpecification = (index) => { specifications.value.splice(index, 1) }
+
+
+// HÀM COPY LINK CHỐNG LỖI BẢO MẬT TRÌNH DUYỆT
+const copyToClipboard = (text) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(() => alert('✅ Đã copy link: ' + text))
+      .catch(err => console.error('Lỗi copy:', err))
+  } else {
+    // Dùng mẹo tạo thẻ input ẩn để copy cho http://localhost
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "absolute";
+    textArea.style.left = "-999999px";
+    document.body.prepend(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert('✅ Đã copy link: ' + text);
+    } catch (error) {
+      console.error('Lỗi copy fallback:', error);
+    } finally {
+      textArea.remove();
+    }
+  }
+}
+
+// Hàm Upload Ảnh
 const handleFileUpload = async (event) => {
   const files = event.target.files
   if (!files || files.length === 0) return
 
   const formData = new FormData()
-  for (let i = 0; i < files.length; i++) {
-    formData.append('images', files[i]) // 'images' là tên field gửi lên Rust
-  }
+  for (let i = 0; i < files.length; i++) formData.append('images', files[i])
 
   try {
     isUploading.value = true
@@ -50,44 +80,42 @@ const handleFileUpload = async (event) => {
     const newUrls = res.data.urls
     uploadedGallery.value.push(...newUrls)
 
-    // TÍNH NĂNG THÔNG MINH: Tự động gán link ảnh vào Form
-    if (!product.value.image_url && newUrls.length > 0) {
-      product.value.image_url = newUrls[0] // Ảnh 1 làm ảnh chính
-    }
+    if (!product.value.image_url && newUrls.length > 0) product.value.image_url = newUrls[0]
     
-    // Gán các ảnh tiếp theo cho các biến thể (nếu biến thể chưa có ảnh)
     let urlIndex = 1;
     for (let i = 0; i < variants.value.length; i++) {
       if (!variants.value[i].image_url && urlIndex < newUrls.length) {
-        variants.value[i].image_url = newUrls[urlIndex]
-        urlIndex++
+        variants.value[i].image_url = newUrls[urlIndex]; urlIndex++;
       }
     }
-
-    alert(`✅ Đã tải lên ${newUrls.length} ảnh thành công!`)
   } catch (error) {
-    console.error("Lỗi upload:", error)
     alert('Upload ảnh thất bại!')
   } finally {
-    isUploading.value = false
-    event.target.value = '' // Reset input
+    isUploading.value = false; event.target.value = ''
   }
 }
 
-// Hàm Submit
+// Hàm Submit Sản Phẩm
 const submitProduct = async () => {
   try {
     isLoading.value = true
+    
+    // Lọc bỏ các thông số bị bỏ trống để tránh rác database
+    const validSpecs = specifications.value.filter(s => s.spec_name.trim() !== '' && s.spec_value.trim() !== '')
+
     const payload = {
       ...product.value,
       discount_percent: product.value.original_price ? Math.round((1 - product.value.price / product.value.original_price) * 100) : null,
-      variants: variants.value
+      variants: variants.value,
+      specifications: validSpecs // <--- Đẩy mảng thông số lên Backend
     }
+
     await axios.post('http://localhost:3000/api/admin/products', payload)
     alert('🎉 Thêm sản phẩm thành công!')
     router.push('/admin/manage-products')
   } catch (error) {
-    alert('Thêm thất bại. Vui lòng kiểm tra lại!')
+    alert('Thêm thất bại. Vui lòng kiểm tra lại Console!')
+    console.error(error)
   } finally {
     isLoading.value = false
   }
@@ -131,7 +159,7 @@ const submitProduct = async () => {
       <div v-if="uploadedGallery.length > 0" class="flex gap-4 overflow-x-auto py-2">
         <div v-for="(url, idx) in uploadedGallery" :key="idx" class="relative group w-24 h-24 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <img :src="url" class="w-full h-full object-cover" />
-          <button @click="navigator.clipboard.writeText(url); alert('Đã copy link!')" class="absolute inset-0 bg-black/50 text-white text-xs font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+          <button @click="copyToClipboard(url)" class="absolute inset-0 bg-black/50 text-white text-xs font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
             Copy Link
           </button>
         </div>
@@ -187,7 +215,29 @@ const submitProduct = async () => {
               <label class="block text-[13px] font-semibold text-gray-700 mb-1">Mô tả chi tiết</label>
               <textarea v-model="product.description" rows="3" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-blue-500"></textarea>
             </div>
-          </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-100">
+              <div class="flex justify-between items-center mb-4">
+                <div>
+                  <h4 class="text-[15px] font-bold text-gray-800">Thông Số Kỹ Thuật</h4>
+                  <p class="text-xs text-gray-500 mt-1">Các thông tin cấu hình chi tiết (Ví dụ: RAM, Chip, Màn hình...)</p>
+                </div>
+                <button @click="addSpecification" class="text-[12px] font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 transition-colors">
+                  + Thêm thông số
+                </button>
+              </div>
+
+              <div class="space-y-3">
+                <div v-for="(spec, index) in specifications" :key="index" class="flex gap-3 items-center bg-gray-50 p-2 rounded-xl border border-gray-100">
+                  <input v-model="spec.spec_name" type="text" placeholder="Tên thông số (VD: RAM)" class="w-1/3 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm outline-none focus:border-blue-500">
+                  <input v-model="spec.spec_value" type="text" placeholder="Giá trị (VD: 16GB)" class="flex-grow px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm outline-none focus:border-blue-500">
+                  <button @click="removeSpecification(index)" title="Xóa" class="text-gray-400 hover:text-red-500 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            </div>
         </div>
       </div>
 
@@ -195,12 +245,14 @@ const submitProduct = async () => {
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div class="flex justify-between items-center mb-5">
             <h3 class="text-lg font-bold text-gray-800">Biến Thể Màu Sắc</h3>
-            <button @click="addVariant" class="text-[13px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg">+ Thêm Màu</button>
+            <button @click="addVariant" class="text-[13px] font-bold text-blue-600 hover:bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg">+ Thêm Màu</button>
           </div>
 
-          <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+          <div class="space-y-4 max-h-[800px] overflow-y-auto pr-2">
             <div v-for="(variant, index) in variants" :key="index" class="p-4 rounded-xl border border-gray-100 bg-gray-50 relative">
-              <button @click="removeVariant(index)" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1">X</button>
+              <button @click="removeVariant(index)" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
               <div class="space-y-3 mt-2">
                 <div class="flex gap-3">
                   <div class="flex-grow">

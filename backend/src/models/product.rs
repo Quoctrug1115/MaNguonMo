@@ -43,6 +43,7 @@ pub struct CreateProductRequest {
     pub rating: Option<f64>,
     pub reviews_count: Option<i32>,
     pub variants: Option<Vec<VariantReq>>,
+    pub specifications: Option<Vec<SpecReq>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,4 +52,10 @@ pub struct VariantReq {
     pub color_hex: String,
     pub stock: i32,
     pub image_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SpecReq {
+    pub spec_name: String,
+    pub spec_value: String,
 }

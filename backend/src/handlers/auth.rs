@@ -102,10 +102,12 @@ pub async fn login(
         ));
     }
 
-    // 3. Tạo JWT Token
+    // 1. Trích xuất role ra một biến riêng trước (dùng clone để không làm mất dữ liệu gốc)
+    let user_role = user.role.clone().unwrap_or_else(|| "user".to_string());
+
+    // 2. Tạo JWT Token
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
-    // Set thời gian hết hạn là 24 giờ
     let expiration = Utc::now()
         .checked_add_signed(Duration::hours(24))
         .expect("Lỗi tính toán thời gian")
@@ -114,7 +116,7 @@ pub async fn login(
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
-        role: user.role.clone().unwrap_or_else(|| "customer".to_string()),
+        role: user_role.clone(), // <-- Dùng biến vừa tạo (Lần 1)
         exp: expiration,
     };
 
@@ -132,16 +134,16 @@ pub async fn login(
         }
     };
 
-    // 4. Trả về Token và thông tin cơ bản cho Frontend
+    // 3. Trả về Token và thông tin cơ bản cho Frontend
     Ok(Json(json!({
-            "message": "Đăng nhập thành công!",
-            "token": token,
-            "user": {
-                "id": user.id,
-                "full_name": &user.full_name,
-                "role": &user.role
-            }
-        })))
+        "status": "success",
+        "message": "Đăng nhập thành công!",
+        "token": token,
+        "user": {
+            "email": user.email,
+            "role": user_role // <-- Dùng biến vừa tạo (Lần 2)
+        }
+    })))
 }
 
 #[derive(Deserialize)]

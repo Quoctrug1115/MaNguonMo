@@ -11,8 +11,8 @@ use axum::extract::Path;
 use uuid::Uuid;
 use std::collections::HashMap;
 // Import các "Khuôn mẫu" dữ liệu từ thư mục models
-use crate::models::product::{CreateProductRequest, Product, VariantReq};
-use crate::models::user::Claims;
+use crate::models::product::{CreateProductRequest, Product};
+use crate::models::user::AdminClaims;
 
 
 // cấu trúc nhận dữ liệu Lọc & Tìm kiếm từ Frontend
@@ -80,7 +80,7 @@ pub async fn get_products(
 
 
 pub async fn create_product(
-    claims: Claims,
+    AdminClaims(claims): AdminClaims, // Chỉ admin mới được phép thêm sản phẩm
     State(pool): State<PgPool>,
     Json(payload): Json<CreateProductRequest>,
 ) -> (StatusCode, Json<Value>) {
@@ -166,6 +166,30 @@ pub async fn create_product(
         }
     }
 
+    if let Some(specs) = payload.specifications {
+        for spec in specs {
+            let spec_insert = sqlx::query!(
+                r#"
+                INSERT INTO product_specifications (product_id, spec_name, spec_value)
+                VALUES ($1, $2, $3)
+                "#,
+                new_product.id, // ID của sản phẩm vừa sinh ra
+                spec.spec_name,
+                spec.spec_value
+            )
+            .execute(&mut *tx)
+            .await;
+
+            if let Err(e) = spec_insert {
+                tracing::error!("Lỗi DB khi thêm thông số kỹ thuật: {:?}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Không thể lưu thông số kỹ thuật" })),
+                );
+            }
+        }
+    }
+
     // 4. LƯU CHÍNH THỨC (COMMIT TRANSACTION)
     if let Err(e) = tx.commit().await {
         tracing::error!("Lỗi commit transaction: {:?}", e);
@@ -223,7 +247,7 @@ pub async fn get_product_by_id(
             // 2. [LẤY DỮ LIỆU THẬT MỚI] Lấy danh sách Thông số kỹ thuật
             let specs_result = sqlx::query_as!(
                 ProductSpec,
-                "SELECT spec_key, spec_value FROM product_specifications WHERE product_id = $1 ORDER BY created_at",
+                "SELECT spec_name as spec_key, spec_value FROM product_specifications WHERE product_id = $1 ORDER BY created_at",
                 id
             )
                 .fetch_all(&pool)

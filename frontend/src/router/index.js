@@ -114,15 +114,29 @@ const router = createRouter({
 
 // TRẠM KIỂM SOÁT HÀNG RÀO FRONTEND
 router.beforeEach((to, from, next) => {
-  // 1. Kiểm tra đúng tên chìa khóa là 'token' (giống với lúc Đăng nhập)
-  const isAuthenticated = localStorage.getItem('token');
+  const token = localStorage.getItem('token')
+  const role = localStorage.getItem('role')
 
-  // 2. Nếu trang đó yêu cầu đăng nhập (requiresAuth) MÀ lại không có token
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    alert('Bạn cần đăng nhập để truy cập khu vực này!');
-    next('/login'); // Đá về trang đăng nhập
+  // Kiểm tra xem trang người dùng muốn vào (to) có cần quyền Admin không?
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    
+    // 1. Nếu chưa đăng nhập -> Đá về trang đăng nhập
+    if (!token) {
+      alert('Vui lòng đăng nhập để tiếp tục!')
+      next({ path: '/login' })
+    } 
+    // 2. Nếu đã đăng nhập nhưng KHÔNG PHẢI Admin -> Đá về trang chủ
+    else if (role !== 'admin') {
+      alert('Truy cập bị từ chối! Bạn không có quyền quản trị viên.')
+      next({ path: '/' }) // Chuyển về trang chủ của E-commerce
+    } 
+    // 3. Nếu là Admin -> Mời vào
+    else {
+      next() 
+    }
   } else {
-    next(); // Cho phép đi tiếp
+    // Nếu trang không yêu cầu quyền (như trang chủ, đăng nhập) -> Cứ cho vào bình thường
+    next()
   }
 })
 

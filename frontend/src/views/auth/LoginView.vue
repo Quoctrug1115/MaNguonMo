@@ -14,16 +14,15 @@ const form = reactive({
 
 const errorMessage = ref('')
 
-// 2. Hàm xử lý Đăng nhập
+// 2. Hàm xử lý Đăng nhập truyền thống
 const handleLogin = async () => {
   errorMessage.value = ''
-    if (!form.email || !form.password) {
-      alert('Vui lòng nhập email và mật khẩu!')
-      return
-    }
+  if (!form.email || !form.password) {
+    alert('Vui lòng nhập email và mật khẩu!')
+    return
+  }
 
   try {
-    // Gọi API Login tới Backend Rust
     const response = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
       headers: {
@@ -38,19 +37,24 @@ const handleLogin = async () => {
     const data = await response.json()
 
     if (response.ok) {
-      // Đăng nhập thành công
       alert(data.message)
 
-      // Lưu Token và Tên user vào LocalStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+      // Lấy role (Đề phòng backend trả null, ta dự phòng là 'user')
+      const userRole = data.user.role || 'user'
 
-      window.location.href = '/'
+      // Lưu Token, User và Role vào LocalStorage
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('role', userRole) // Vệ sĩ Router sẽ dùng cái này để kiểm tra
+
+      // PHÂN LUỒNG CHUYỂN HƯỚNG
+      alert('Đăng nhập thành công!')
+
+        router.push('/')
 
     } else {
-      // Đăng nhập thất bại (Sai pass/email)
-      errorMessage.value = data.error
-      alert(data.error)
+      errorMessage.value = data.error || 'Đăng nhập thất bại'
+      alert(errorMessage.value)
     }
 
   } catch (error) {
@@ -59,7 +63,7 @@ const handleLogin = async () => {
   }
 }
 
-
+// 3. Hàm xử lý Đăng nhập Google
 const handleGoogleLoginSuccess = async (response) => {
   const token = response.credential;
   
@@ -68,20 +72,23 @@ const handleGoogleLoginSuccess = async (response) => {
       token: token
     });
     
-    // 1. Lưu Token và thông tin User vào bộ nhớ trình duyệt (LocalStorage)
-    // Để các trang khác (như trang chủ, giỏ hàng) có thể lấy ra dùng
+    const userData = res.data.user;
+    const userRole = userData.role || 'user';
+
+    // Lưu thông tin vào bộ nhớ trình duyệt
     localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user)); // user phải biến thành chuỗi mới lưu được
+    localStorage.setItem('user', JSON.stringify(userData)); 
+    localStorage.setItem('role', userRole); 
     
-    // 2. Chuyển hướng người dùng về Trang chủ (route '/')
-    router.push('/');
-    
+    alert('Đăng nhập Google thành công!');
+
+      router.push('/')
+      
   } catch (error) {
     console.error("Lỗi đăng nhập:", error);
-    alert("Có lỗi xảy ra khi đăng nhập!");
+    alert("Có lỗi xảy ra khi đăng nhập Google!");
   }
 }
-
 </script>
 
 <template>

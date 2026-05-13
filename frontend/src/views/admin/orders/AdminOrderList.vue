@@ -1,9 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 
 const orders = ref([])
 const isLoading = ref(true)
+const currentFilter = ref('all')
+
+const filteredOrders = computed(() => {
+  if (currentFilter.value === 'all') {
+    return orders.value // Nếu chọn 'Tất cả' thì trả về nguyên gốc
+  }
+  // Nếu chọn trạng thái khác, chỉ lọc ra những đơn khớp trạng thái
+  return orders.value.filter(order => order.status === currentFilter.value)
+})
 
 // Hàm lấy dữ liệu toàn bộ đơn hàng
 const fetchOrders = async () => {
@@ -63,10 +72,19 @@ onMounted(() => {
   <div class="p-8 max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-[28px] font-bold text-gray-800 tracking-wide">Quản Lý Đơn Hàng</h2>
-      <button @click="fetchOrders" class="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 font-semibold text-gray-700">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        Làm mới
-      </button>
+        <div class="flex gap-4">
+          <select v-model="currentFilter" class="px-4 py-2 border border-gray-200 rounded-lg shadow-sm outline-none font-semibold text-gray-700 bg-white cursor-pointer hover:bg-gray-50">
+            <option value="all">Tất cả đơn hàng</option>
+            <option value="pending">🟡 Chờ xử lý</option>
+            <option value="shipping">🔵 Đang giao hàng</option>
+            <option value="completed">🟢 Đã hoàn thành</option>
+            <option value="cancelled">🔴 Đã hủy</option>
+          </select>
+          <button @click="fetchOrders" class="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 font-semibold text-gray-700">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Làm mới
+          </button>
+      </div>
     </div>
 
     <!-- Bảng hiển thị Đơn Hàng -->
@@ -75,8 +93,8 @@ onMounted(() => {
         Đang tải dữ liệu đơn hàng...
       </div>
       
-      <div v-else-if="orders.length === 0" class="p-8 text-center text-gray-500 font-semibold">
-        Chưa có đơn hàng nào trong hệ thống!
+      <div v-else-if="filteredOrders.length === 0" class="p-8 text-center text-gray-500 font-semibold">
+        Không tìm thấy đơn hàng nào trong mục này!
       </div>
 
       <table v-else class="w-full text-left border-collapse">
@@ -91,7 +109,7 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="order in filteredOrders" :key="order.id" class="hover:bg-gray-50 transition-colors">
             
             <!-- Mã đơn (rút gọn) -->
             <td class="py-4 px-6 text-sm font-mono text-gray-600">

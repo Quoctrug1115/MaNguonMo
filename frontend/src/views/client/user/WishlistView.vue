@@ -2,25 +2,29 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { fetchWishlist } from '@/store/wishlistState' // Để cập nhật số trên Trái tim
-import { fetchCartCount } from '@/store/cartState'   // Để cập nhật số trên Giỏ hàng
+import { fetchWishlist } from '@/store/wishlistState'
+import { fetchCartCount } from '@/store/cartState'
 
 const router = useRouter()
 const wishlistItems = ref([])
 const isLoading = ref(true)
+const token = localStorage.getItem('token')
+
 
 // 1. Tải danh sách yêu thích từ Backend
 const loadWishlist = async () => {
-  const userStr = localStorage.getItem('user')
-  if (!userStr) {
+  if (!token) {
     router.push('/login')
     return
   }
-  
-  const user = JSON.parse(userStr)
+
   try {
-    const res = await axios.get(`http://localhost:3000/api/wishlist/${user.id}`)
-    wishlistItems.value = res.data.data
+    const response = await axios.get('http://localhost:3000/api/wishlist', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    wishlistItems.value = response.data.data
   } catch (error) {
     console.error("Lỗi tải danh sách yêu thích:", error)
   } finally {
@@ -32,13 +36,15 @@ onMounted(() => { loadWishlist() })
 
 // 2. Xóa khỏi danh sách yêu thích
 const removeItem = async (productId) => {
-  const user = JSON.parse(localStorage.getItem('user'))
+  if (!token) {
+    router.push('/login')
+    return
+  }
   try {
-    await axios.delete(`http://localhost:3000/api/wishlist/${user.id}/${productId}`)
-    
-    // Xóa trực tiếp trên màn hình để không cần load lại trang
-    wishlistItems.value = wishlistItems.value.filter(item => item.product_id !== productId)
-    
+    await axios.delete(`http://localhost:3000/api/wishlist/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    await fetchWishlist()
     // Báo cho Trạm phát sóng cập nhật lại số lượng cục đỏ
     fetchWishlist()
   } catch (error) {
@@ -48,20 +54,24 @@ const removeItem = async (productId) => {
 
 // 3. Thêm thẳng vào Giỏ hàng từ trang Yêu thích
 const moveToCart = async (product) => {
-  const user = JSON.parse(localStorage.getItem('user'))
+  if (!token) {
+    router.push('/login')
+    return
+  }
   try {
     const res = await axios.post('http://localhost:3000/api/cart', {
-      user_id: user.id,
       product_id: product.product_id,
       quantity: 1
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     })
     
     if (res.status === 200) {
       alert(`🛒 Đã thêm [${product.product_name}] vào giỏ hàng!`)
       fetchCartCount() // Báo Giỏ hàng nhảy số
-      
-      // Mẹo UX: Thường thêm vào giỏ xong người ta sẽ xóa khỏi wishlist cho gọn
-      removeItem(product.product_id) 
+      removeItem(product.product_id)
     }
   } catch (error) {
     console.error("Lỗi thêm vào giỏ hàng:", error)

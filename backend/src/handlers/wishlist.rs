@@ -11,29 +11,34 @@ use crate::models::user::Claims;
 
 #[derive(Deserialize)]
 pub struct WishlistRequest {
-    pub user_id: Uuid,
     pub product_id: Uuid,
 }
 
 // 1. API: THÊM VÀO MỤC YÊU THÍCH (POST)
 pub async fn add_to_wishlist(
+    claims: Claims,
     State(pool): State<PgPool>,
     Json(payload): Json<WishlistRequest>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     
-    // Tuyệt chiêu ON CONFLICT DO NOTHING: Nếu đã thả tim rồi mà bấm thêm lần nữa thì DB tự động bỏ qua, không báo lỗi sập server!
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token lỗi"})))),
+    };
+
+    // Tuyệt chiêu ON CONFLICT DO NOTHING
     sqlx::query!(
         r#"
         INSERT INTO wishlist_items (user_id, product_id) 
         VALUES ($1, $2)
         ON CONFLICT (user_id, product_id) DO NOTHING
         "#,
-        payload.user_id,
+        user_id,
         payload.product_id
     )
     .execute(&pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?; 
 
     Ok(Json(json!({ "message": "Đã thêm vào mục yêu thích" })))
 }
@@ -79,18 +84,27 @@ pub async fn get_wishlist(
 
 // 3. API: BỎ THẢ TIM (DELETE)
 pub async fn remove_from_wishlist(
+    claims: Claims,
     State(pool): State<PgPool>,
-    Path((user_id, product_id)): Path<(Uuid, Uuid)>, // Nhận 2 ID cùng lúc từ đường dẫn
-) -> Result<Json<Value>, (StatusCode, String)> {
+    Path((product_id)): Path<Uuid>, // Nhận 2 ID cùng lúc từ đường dẫn
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
 
-    sqlx::query!(
+    let user_id = match Uuid::parse_str(&claims.sub) {
+            Ok(id) => id,
+            Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token lỗi"})))),
+        };
+
+// Chạy lệnh xóa
+    let result = sqlx::query!(
         "DELETE FROM wishlist_items WHERE user_id = $1 AND product_id = $2",
         user_id,
         product_id
     )
     .execute(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .await;
 
-    Ok(Json(json!({ "message": "Đã bỏ yêu thích" })))
+    match result {
+        Ok(_) => Ok(Json(json!({"message": "Đã xóa khỏi yêu thích"}))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()})))),
+    }
 }

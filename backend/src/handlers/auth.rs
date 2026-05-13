@@ -1,4 +1,4 @@
-use axum::{extract::{State, Path}, http::StatusCode, Json};
+use axum::{Json, extract::{Path, State}, http::{Error, StatusCode}};
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use std::env;
@@ -183,11 +183,16 @@ pub async fn get_profile(
 
 // 2. API Cập nhật thông tin Cá nhân (PUT)
 pub async fn update_user_profile(
+    claims: Claims, // Tự động nhận diện User qua Token
     State(pool): State<PgPool>,
-    Path(user_id): Path<Uuid>,
     Json(payload): Json<UpdateProfileRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token lỗi"})))),
+    };
+
     // 1. Lấy thông tin user hiện tại từ DB để xem họ ĐÃ CÓ mật khẩu chưa
     let user_db = sqlx::query!("SELECT password_hash FROM users WHERE id = $1", user_id)
         .fetch_one(&pool)

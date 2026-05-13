@@ -7,17 +7,18 @@ const router = useRouter()
 const orders = ref([])
 const isLoading = ref(true)
 
+const token = localStorage.getItem('token')
 // Hàm lấy dữ liệu
 const fetchOrders = async () => {
-  const userStr = localStorage.getItem('user')
-  if (!userStr) {
+  if (!token) {
     router.push('/login')
     return
   }
-  
-  const user = JSON.parse(userStr)
+
   try {
-    const res = await axios.get(`http://localhost:3000/api/orders/user/${user.id}`)
+    const res = await axios.get('http://localhost:3000/api/orders/user', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     orders.value = res.data.data
   } catch (error) {
     console.error("Lỗi lấy đơn hàng:", error)
@@ -38,15 +39,26 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('vi-VN', options);
 }
 
-const getStatusBadge = (status) => {
-  switch(status) {
-    case 'pending': return { text: 'Chờ xác nhận', class: 'bg-yellow-100 text-yellow-800' }
-    case 'processing': return { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' }
-    case 'shipped': return { text: 'Đang giao', class: 'bg-purple-100 text-purple-800' }
-    case 'delivered': return { text: 'Đã giao hàng', class: 'bg-green-100 text-green-800' }
-    case 'cancelled': return { text: 'Đã hủy', class: 'bg-red-100 text-red-800' }
-    default: return { text: 'Không rõ', class: 'bg-gray-100 text-gray-800' }
+const getOrderStatusText = (status) => {
+  const statusMap = {
+    'pending': 'Chờ xác nhận',
+    'shipping': 'Đang giao hàng',
+    'completed': 'Đã hoàn thành',
+    'cancelled': 'Đã hủy'
   }
+  // Nếu status khớp với map thì trả về tiếng Việt, nếu không thì báo 'Không rõ'
+  return statusMap[status] || 'Không rõ'
+}
+
+// (Bonus) Hàm này giúp bạn đổi màu chữ/nền tùy theo trạng thái cho đẹp mắt
+const getOrderStatusClass = (status) => {
+  const classMap = {
+    'pending': 'text-yellow-600 bg-yellow-100',
+    'shipping': 'text-blue-600 bg-blue-100',
+    'completed': 'text-green-600 bg-green-100',
+    'cancelled': 'text-red-600 bg-red-100'
+  }
+  return classMap[status] || 'text-gray-600 bg-gray-100'
 }
 </script>
 
@@ -70,8 +82,7 @@ const getStatusBadge = (status) => {
             <p class="text-sm text-gray-500 mt-1">Ngày đặt: <span class="text-black">{{ formatDate(order.created_at) }}</span></p>
           </div>
           <div class="flex flex-col sm:items-end">
-            <span :class="['px-3 py-1 rounded-full text-xs font-bold w-max', getStatusBadge(order.status).class]">
-              {{ getStatusBadge(order.status).text }}
+            <span class="px-3 py-1 text-sm font-semibold rounded-full" :class="getOrderStatusClass(order.status)">{{ getOrderStatusText(order.status) }}
             </span>
             <p class="text-lg font-bold text-red-500 mt-2">Tổng: {{ formatPrice(order.total_price) }}</p>
           </div>

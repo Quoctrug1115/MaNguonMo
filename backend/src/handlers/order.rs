@@ -2,24 +2,30 @@ use axum::{extract::State, http::StatusCode, Json};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
+use tower_http::classify;
 use uuid::Uuid;
 use axum::extract::Path;
-
+use crate::models::user::Claims;
 
 #[derive(Deserialize)]
 pub struct CheckoutRequest {
-    pub user_id: Uuid,
     pub shipping_address: String,
     pub phone_number: String,
 }
 
 pub async fn checkout(
+    claims: Claims,
     State(pool): State<PgPool>,
     Json(payload): Json<CheckoutRequest>,
 ) -> (StatusCode, Json<Value>) {
 
-    // --- BƯỚC 0: BẮT ĐẦU TRANSACTION (Tạo phiên giao dịch mới) ---
-    // Mọi lỗi từ đây trở đi sẽ được thu hồi (rollback) lại CSDL
+    // --- MỚI THÊM: Bóc tách user_id từ Token ---
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::UNAUTHORIZED, Json(json!({"error": "Token không hợp lệ"}))),
+    };
+
+    // --- BƯỚC 0: BẮT ĐẦU TRANSACTION ---
     let mut tx = match pool.begin().await {
         Ok(t) => t,
         Err(e) => {
@@ -28,7 +34,7 @@ pub async fn checkout(
         }
     };
 
-    // 1. LẤY GIỎ HÀNG (Chú ý: Dùng &mut *tx thay vì &pool)
+    // 1. LẤY GIỎ HÀNG 
     let cart_items_result = sqlx::query!(
         r#"
         SELECT c.product_id, c.quantity, COALESCE(p.price, 0)::float8 as "price!" 
@@ -36,9 +42,9 @@ pub async fn checkout(
         JOIN products p ON c.product_id = p.id
         WHERE c.user_id = $1
         "#,
-        payload.user_id
+        user_id // SỬA: Dùng biến user_id từ Token
     )
-    .fetch_all(&mut *tx) // Thực thi trong transaction
+    .fetch_all(&mut *tx) 
     .await;
 
     let cart_items = match cart_items_result {
@@ -56,16 +62,16 @@ pub async fn checkout(
         total_price += item.price * (item.quantity as f64);
     }
 
-    // 3. TẠO ĐƠN HÀNG (Dùng &mut *tx)
+    // 3. TẠO ĐƠN HÀNG 
     let order_insert_result = sqlx::query!(
         r#"
         INSERT INTO orders (user_id, total_price, shipping_address, phone_number, status)
         VALUES ($1, $2::float8, $3, $4, 'pending')
         RETURNING id
         "#,
-        payload.user_id, total_price, payload.shipping_address, payload.phone_number
+        user_id, total_price, payload.shipping_address, payload.phone_number // SỬA: Dùng biến user_id từ Token
     )
-    .fetch_one(&mut *tx) // Thực thi trong transaction
+    .fetch_one(&mut *tx) 
     .await;
 
     let order_record = match order_insert_result {
@@ -74,7 +80,7 @@ pub async fn checkout(
     };
     let order_id = order_record.id;
 
-    // 4. LƯU CHI TIẾT ĐƠN HÀNG (Dùng &mut *tx)
+    // 4. LƯU CHI TIẾT ĐƠN HÀNG 
     for item in cart_items {
         let item_insert_result = sqlx::query!(
             r#"
@@ -83,20 +89,18 @@ pub async fn checkout(
             "#,
             order_id, item.product_id, item.quantity, item.price 
         )
-        .execute(&mut *tx) // Thực thi trong transaction
+        .execute(&mut *tx) 
         .await;
 
-        // --- NẾU LỖI GIỮA ĐƯỜNG: Về nguyên tắc, Transaction sẽ tự hủy, nhưng tốt nhất là in lỗi ra ---
         if let Err(e) = item_insert_result {
             tracing::error!("Lỗi lưu chi tiết (Transaction will abort): {:?}", e);
-            // Bạn có thể trả về lỗi ở đây, hoặc để cho Transaction tự động Rollback
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi lưu chi tiết sản phẩm"})));
         }
     }
 
-    // 5. DỌN DẸP GIỎ HÀNG (Dùng &mut *tx)
-    let delete_cart_result = sqlx::query!("DELETE FROM cart_items WHERE user_id = $1", payload.user_id)
-        .execute(&mut *tx) // Thực thi trong transaction
+    // 5. DỌN DẸP GIỎ HÀNG 
+    let delete_cart_result = sqlx::query!("DELETE FROM cart_items WHERE user_id = $1", user_id) // SỬA: Dùng biến user_id từ Token
+        .execute(&mut *tx) 
         .await;
 
     if let Err(e) = delete_cart_result {
@@ -105,7 +109,6 @@ pub async fn checkout(
     }
 
     // --- BƯỚC 6: CHỐT LỆNH (COMMIT) ---
-    // Chỉ khi code chạy tới tận đây, mọi dữ liệu ở trên mới thực sự được lưu vào Database!
     match tx.commit().await {
         Ok(_) => {
             (StatusCode::OK, Json(json!({ 
@@ -122,10 +125,15 @@ pub async fn checkout(
 
 // API: Lấy danh sách đơn hàng của một người dùng
 pub async fn get_user_orders(
+    claims: Claims,
     State(pool): State<PgPool>,
-    Path(user_id): Path<Uuid>,
 ) -> (StatusCode, Json<Value>) {
 
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::UNAUTHORIZED, Json(json!({"error": "Token không hợp lệ"}))),
+    };
+    
     // 1. Lấy tất cả các hóa đơn (orders) của user này, sắp xếp từ mới nhất đến cũ nhất
     let orders_result = sqlx::query!(
         r#"

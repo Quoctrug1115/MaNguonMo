@@ -56,7 +56,7 @@ async fn main() {
         .route("/api/cart", get(handlers::cart::get_cart).post(handlers::cart::add_to_cart))
         .route("/api/cart/item/:id", put(handlers::cart::update_cart_quantity).delete(handlers::cart::delete_cart_item))
         .route("/api/orders/checkout", post(handlers::order::checkout))
-        .route("/api/orders/user/:user_id", get(handlers::order::get_user_orders))
+        .route("/api/orders/user", get(handlers::order::get_user_orders))
         .route("/api/wishlist",get(handlers::wishlist::get_wishlist).post(handlers::wishlist::add_to_wishlist))
         .route("/api/wishlist/:user_id/:product_id", delete(handlers::wishlist::remove_from_wishlist))
         .route("/api/profile/:user_id", get(handlers::auth::get_profile).put(handlers::auth::update_user_profile))

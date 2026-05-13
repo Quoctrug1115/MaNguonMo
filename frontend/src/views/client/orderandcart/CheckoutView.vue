@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const cartItems = ref([])
+const token = localStorage.getItem('token')
 
 // Form dữ liệu khách hàng sẽ điền
 const form = ref({
@@ -17,14 +18,14 @@ const form = ref({
 
 // Lấy giỏ hàng (giống hệt trang Cart)
 const fetchCart = async () => {
-  const userStr = localStorage.getItem('user')
-  if (!userStr) {
+  if (!token) {
     router.push('/login')
     return
   }
-  const user = JSON.parse(userStr)
   try {
-    const res = await axios.get(`http://localhost:3000/api/cart/${user.id}`)
+    const res = await axios.get('http://localhost:3000/api/cart', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     cartItems.value = res.data.data
   } catch (error) {
     console.error("Lỗi lấy giỏ hàng:", error)
@@ -51,20 +52,19 @@ const placeOrder = async () => {
     return
   }
 
-  const user = JSON.parse(localStorage.getItem('user'))
-
   try {
-    // 2. Gọi API Checkout
+    // 2. Gọi API Checkout (XÓA BỎ DÒNG user_id)
     const res = await axios.post('http://localhost:3000/api/orders/checkout', {
-      user_id: user.id,
       shipping_address: `${form.value.address}, ${form.value.city}`,
       phone_number: form.value.phone
+    }, {
+      headers: { 'Authorization': `Bearer ${token}` }
     })
 
     // 3. Xử lý khi thành công
     if (res.status === 200) {
       alert("🎉 " + res.data.message + "\nMã đơn hàng: " + res.data.order_id)
-      router.push('/') // Đẩy về trang chủ (hoặc bạn có thể tạo trang Cảm ơn)
+      router.push('/') // Đẩy về trang chủ
     }
 
   } catch (error) {

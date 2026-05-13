@@ -157,17 +157,22 @@ pub struct UpdateProfileRequest {
 }
 
 pub async fn get_profile(
+    claims: Claims,
     State(pool): State<PgPool>,
-    Path(user_id): Path<Uuid>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token lỗi"})))),
+    };
+
     let user = sqlx::query!(
         r#"SELECT id, full_name, email, phone, address FROM users WHERE id = $1"#,
         user_id
     )
     .fetch_optional(&pool)
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi DB".to_string()))?;
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi DB"}))))?;
 
     match user {
         Some(u) => Ok(Json(json!({
@@ -177,7 +182,7 @@ pub async fn get_profile(
             "phone": u.phone,
             "address": u.address
         }))),
-        None => Err((StatusCode::NOT_FOUND, "Không tìm thấy user".to_string())),
+        None => Err((StatusCode::NOT_FOUND, Json(json!({"error": "Không tìm thấy user"})))),
     }
 }
 
@@ -186,7 +191,7 @@ pub async fn update_user_profile(
     claims: Claims, // Tự động nhận diện User qua Token
     State(pool): State<PgPool>,
     Json(payload): Json<UpdateProfileRequest>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     
     let user_id = match Uuid::parse_str(&claims.sub) {
         Ok(id) => id,
@@ -197,7 +202,7 @@ pub async fn update_user_profile(
     let user_db = sqlx::query!("SELECT password_hash FROM users WHERE id = $1", user_id)
         .fetch_one(&pool)
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi truy xuất dữ liệu".to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi truy xuất dữ liệu"}))))?;
 
     let mut new_hashed_password: Option<String> = None;
 
@@ -209,11 +214,11 @@ pub async fn update_user_profile(
             Some(existing_hash) if !existing_hash.is_empty() => {
                 // TRƯỜNG HỢP 1: TÀI KHOẢN THƯỜNG (Đã có pass) -> BẮT BUỘC kiểm tra mật khẩu cũ
                 let curr_pwd = payload.current_password.as_ref()
-                    .ok_or((StatusCode::BAD_REQUEST, "Vui lòng nhập mật khẩu cũ!".to_string()))?;
+                    .ok_or((StatusCode::BAD_REQUEST, Json(json!({"error": "Vui lòng nhập mật khẩu cũ!"}))))?;
                 
                 let is_valid = verify(curr_pwd, existing_hash).unwrap_or(false);
                 if !is_valid {
-                    return Err((StatusCode::BAD_REQUEST, "Mật khẩu cũ không chính xác!".to_string()));
+                    return Err((StatusCode::BAD_REQUEST, Json(json!({"error": "Mật khẩu cũ không chính xác!"}))));
                 }
             },
             _ => {
@@ -224,8 +229,7 @@ pub async fn update_user_profile(
 
         // Mã hóa mật khẩu mới
         let hashed = bcrypt_hash(new_pwd, DEFAULT_COST)
-            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi hệ thống khi mã hóa mật khẩu".to_string()))?;
-        
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi hệ thống khi mã hóa mật khẩu"}))))?;
         new_hashed_password = Some(hashed);
     }
 
@@ -254,7 +258,7 @@ pub async fn update_user_profile(
         Ok(_) => Ok(Json(json!({ "message": "Cập nhật thành công!" }))),
         Err(e) => {
             tracing::error!("Lỗi cập nhật user: {:?}", e);
-            Err((StatusCode::INTERNAL_SERVER_ERROR, "Không thể cập nhật hồ sơ".to_string()))
+            Err((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Không thể cập nhật hồ sơ"}))))
         }
     }
 }
@@ -277,7 +281,7 @@ pub struct GoogleUserInfo {
 pub async fn google_login(
     State(pool): State<PgPool>,
     Json(payload): Json<GoogleLoginReq>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     
     // 1. Mang Token của khách đi hỏi Google xem có chuẩn không
     let client = reqwest::Client::new();
@@ -288,17 +292,17 @@ pub async fn google_login(
         ))
         .send()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Không thể kết nối đến Google".to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Không thể kết nối đến Google"}))))?;
 
     if !google_res.status().is_success() {
-        return Err((StatusCode::UNAUTHORIZED, "Token Google không hợp lệ hoặc đã hết hạn!".to_string()));
+        return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token Google không hợp lệ hoặc đã hết hạn!"}))));
     }
 
     // 2. Lấy thông tin khách hàng từ Google (Email, Tên, Ảnh)
     let google_user: GoogleUserInfo = google_res
         .json()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi đọc dữ liệu Google".to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi đọc dữ liệu Google"}))))?;
 
     println!("Khách hàng chuẩn bị đăng nhập: {} ({})", google_user.name, google_user.email);
 
@@ -322,7 +326,7 @@ pub async fn google_login(
     )
     .fetch_one(&pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Lỗi Database: {}", e)))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi Database: {}", e)}))))?;
 
     // 4. Trả kết quả thành công về cho Vue
     // 1. Tạo JWT Token cho khách dùng Google giống hệt khách thường
@@ -348,7 +352,7 @@ pub async fn google_login(
         Err(_) => {
             return Err((
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                "Lỗi khi tạo token đăng nhập Google".to_string(),
+                Json(json!({"error": "Lỗi khi tạo token đăng nhập Google"})),
             ));
         }
     };

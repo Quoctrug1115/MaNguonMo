@@ -18,7 +18,7 @@ const password = ref({
 
 // Hàm cấu hình Header có Token
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token') // Nhớ đổi tên key token cho đúng với dự án của bạn
+  const token = localStorage.getItem('token')
   return { headers: { Authorization: `Bearer ${token}` } }
 }
 
@@ -26,22 +26,19 @@ const getAuthHeaders = () => {
 const fetchProfile = async () => {
   try {
 
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!storedUser.id) return;
-
-    const res = await axios.get(`http://localhost:3000/api/profile/${storedUser.id}`, getAuthHeaders())
-
+    const res = await axios.get(`http://localhost:3000/api/profile`, getAuthHeaders())
+    console.log("Dữ liệu Backend trả về:", res.data);
     if (res.data) {
-        // Tách chuỗi bằng dấu cách
-        const nameParts = (res.data.full_name || '').split(' ');
-        const firstName = nameParts.length > 1 ? nameParts.pop() : (res.data.full_name || '');
+        const userData = res.data.data || res.data || res.data.user;
+        const nameParts = (userData.full_name || '').split(' ');
+        const firstName = nameParts.length > 1 ? nameParts.pop() : (userData.full_name || '');
         const lastName = nameParts.join(' ');
 
         user.value = {
         first_name: firstName,
         last_name: lastName,
-        email: res.data.email || '',
-        address: res.data.address || ''
+        email: userData.email || '',
+        address: userData.address || ''
         }
     }
     } catch (error) {
@@ -58,10 +55,9 @@ const handleSave = async () => {
         }
 
     const payload = {
-        first_name: user.value.first_name,
-        last_name: user.value.last_name,
-        email: user.value.email,
-        address: user.value.address,
+          full_name: `${user.value.last_name} ${user.value.first_name}`.trim(),
+          email: user.value.email,
+          address: user.value.address,
         }
 
     if (password.value.new) {
@@ -72,7 +68,7 @@ const handleSave = async () => {
     }
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-    await axios.put(`http://localhost:3000/api/profile/${storedUser.id}`, payload, getAuthHeaders())
+    await axios.put(`http://localhost:3000/api/profile`, payload, getAuthHeaders())
     
     alert('Cập nhật hồ sơ thành công!')
     password.value = { old: '', new: '', confirm: '' }
@@ -128,8 +124,12 @@ onMounted(() => {
             <div>
               <h3 class="font-bold text-gray-900 mb-3 mt-6">Đơn hàng của tôi</h3>
               <ul class="ml-6 space-y-2 text-sm text-gray-500">
-                <li class="hover:text-red-500 cursor-pointer transition-colors">My Returns</li>
-                <li class="hover:text-red-500 cursor-pointer transition-colors">My Cancellations</li>
+                <li>
+                  <router-link to="/orders" class="hover:text-red-500 cursor-pointer transition-colors">Lịch sử đơn hàng</router-link>
+                </li>
+                <li>
+                  <router-link to="/cancelled-orders" class="hover:text-red-500 cursor-pointer transition-colors">Đơn hủy</router-link>
+                </li>
               </ul>
             </div>
 

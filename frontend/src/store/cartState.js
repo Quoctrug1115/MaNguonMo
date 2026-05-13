@@ -1,23 +1,24 @@
 import { ref } from 'vue'
 import axios from 'axios'
 
-// Biến lưu số lượng giỏ hàng dùng chung cho toàn web
 export const cartCount = ref(0)
 
-// Hàm gọi API để đếm lại số lượng
 export const fetchCartCount = async () => {
-  const userStr = localStorage.getItem('user')
-  if (!userStr) {
+  const token = localStorage.getItem('token')
+  
+  // Nếu không có thẻ thông hành thì mặc định giỏ hàng = 0 và thoát luôn
+  if (!token) {
     cartCount.value = 0
     return
   }
   
   try {
-    const user = JSON.parse(userStr)
-    const res = await axios.get(`http://localhost:3000/api/cart/${user.id}`)
+    // Gọi API chuẩn không cần chèn ID vào URL
+    const res = await axios.get('http://localhost:3000/api/cart', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     
     const items = res.data.data
-    // Cộng dồn toàn bộ số lượng (quantity) của các món đồ trong giỏ
     cartCount.value = items.reduce((total, item) => total + item.quantity, 0)
   } catch (error) {
     console.error("Lỗi đếm số lượng giỏ hàng:", error)

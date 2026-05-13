@@ -8,21 +8,30 @@ use serde_json::{json, Value};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::models::user::Claims;
+
 // Cấu trúc dữ liệu Frontend sẽ gửi lên khi bấm "Thêm vào giỏ"
 #[derive(Deserialize)]
 pub struct AddToCartRequest {
-    pub user_id: Uuid,
     pub product_id: Uuid,
     pub quantity: i32,
 }
 
 // 1. API THÊM VÀO GIỎ HÀNG
 pub async fn add_to_cart(
+    claims: Claims, // Lấy thông tin người dùng đã xác thực
     State(pool): State<PgPool>,
     Json(payload): Json<AddToCartRequest>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> { // 🛠️ Sửa: Đổi String thành Json<Value> để thông báo lỗi chuẩn form
     
-    // Tuyệt chiêu UPSERT của PostgreSQL: 
+    let user_id_result = Uuid::parse_str(&claims.sub);
+    let user_id = match user_id_result {
+        Ok(id) => id,
+        // 🛠️ Sửa: Bọc trong Err() cho đúng chuẩn Result
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token không hợp lệ"})))), 
+    };
+
+    // Tuyệt chiêu UPSERT của PostgreSQL:
     // Nếu chưa có thì INSERT (thêm mới). Nếu có rồi thì UPDATE (cộng dồn số lượng).
     let result = sqlx::query!(
         r#"
@@ -33,7 +42,7 @@ pub async fn add_to_cart(
             quantity = cart_items.quantity + EXCLUDED.quantity,
             updated_at = NOW()
         "#,
-        payload.user_id,
+        user_id,             // 🛠️ Sửa: Dùng biến user_id bóc từ Token, KHÔNG dùng payload.user_id nữa
         payload.product_id,
         payload.quantity
     )
@@ -44,18 +53,24 @@ pub async fn add_to_cart(
         Ok(_) => Ok(Json(json!({ "message": "Đã thêm vào giỏ hàng thành công!" }))),
         Err(e) => {
             tracing::error!("Lỗi thêm giỏ hàng: {:?}", e);
-            Err((StatusCode::INTERNAL_SERVER_ERROR, "Lỗi khi lưu vào giỏ hàng".to_string()))
+            Err((StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi khi lưu vào giỏ hàng"}))))
         }
     }
 }
 
-// 2. API LẤY DANH SÁCH GIỎ HÀNG (CỦA 1 USER)
+// 2. API LẤY DANH SÁCH GIỎ HÀNG (CỦA 1 USER)// 2. API LẤY DANH SÁCH GIỎ HÀNG (Dùng Claims thay vì Path)
 pub async fn get_cart(
+    claims: Claims, // Tự động nhận diện User qua Token
     State(pool): State<PgPool>,
-    Path(user_id): Path<Uuid>, // Lấy user_id từ đường dẫn URL
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> { 
     
-    // Phép thuật JOIN: Lấy số lượng từ bảng cart_items, kết hợp với tên, hình ảnh, giá từ bảng products
+    // 1. Tự động lấy ID từ token an toàn tuyệt đối
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token không hợp lệ"})))),
+    };
+
+    // 2. Phép thuật JOIN
     let cart_items = sqlx::query!(
         r#"
         SELECT 
@@ -76,7 +91,7 @@ pub async fn get_cart(
     .await
     .map_err(|e| {
         tracing::error!("Lỗi lấy giỏ hàng: {:?}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Lỗi tải giỏ hàng".to_string())
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "Lỗi tải giỏ hàng"})))
     })?;
 
     let cart_json: Vec<serde_json::Value> = cart_items.into_iter().map(|item| {
@@ -90,12 +105,12 @@ pub async fn get_cart(
         })
     }).collect();
 
-    // 2. Trả về mảng cart_json đã được xử lý
     Ok(Json(json!({
         "message": "Thành công",
         "data": cart_json 
     })))
 }
+
 
 // 1. API CẬP NHẬT SỐ LƯỢNG (Dùng cho nút + và -)
 pub async fn update_cart_quantity(

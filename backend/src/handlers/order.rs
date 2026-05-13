@@ -190,3 +190,97 @@ pub async fn get_user_orders(
     // 4. Gửi cục hàng này về cho Frontend
     (StatusCode::OK, Json(json!({ "data": order_list })))
 }
+
+
+
+#[derive(Deserialize)]
+pub struct UpdateStatusRequest {
+    pub status: String,
+}
+
+pub async fn get_all_orders_admin(
+    // Tùy vào cách cấu hình của bạn, hãy thêm AdminClaims vào đây để bảo mật nhé!
+    // AdminClaims(_claims): AdminClaims, 
+    State(pool): State<PgPool>,
+) -> (StatusCode, Json<Value>) {
+
+    // Lấy tất cả đơn hàng và JOIN với bảng users để lấy Tên & Email khách hàng
+    let orders_result = sqlx::query!(
+        r#"
+        SELECT o.id, o.total_price::float8, o.status, o.shipping_address, o.phone_number, o.created_at,
+               u.full_name, u.email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        ORDER BY o.created_at DESC
+        "#
+    )
+    .fetch_all(&pool)
+    .await;
+
+    let orders = match orders_result {
+        Ok(o) => o,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi DB: {}", e)}))),
+    };
+
+    let mut order_list = Vec::new();
+
+    for order in orders {
+        // Nhặt chi tiết món đồ cho từng đơn
+        let items = sqlx::query!(
+            r#"
+            SELECT oi.quantity, oi.price_at_purchase::float8 as price, p.name as product_name
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = $1
+            "#,
+            order.id
+        ).fetch_all(&pool).await.unwrap_or_default();
+
+        let items_json: Vec<Value> = items.into_iter().map(|item| {
+            json!({
+                "product_name": item.product_name,
+                "quantity": item.quantity,
+                "price": item.price
+            })
+        }).collect();
+
+        order_list.push(json!({
+            "id": order.id,
+            "customer_name": order.full_name,
+            "customer_email": order.email,
+            "total_price": order.total_price,
+            "status": order.status,
+            "shipping_address": order.shipping_address,
+            "phone_number": order.phone_number,
+            "created_at": order.created_at,
+            "items": items_json
+        }));
+    }
+
+    (StatusCode::OK, Json(json!({ "data": order_list })))
+}
+
+// 2. Cập nhật trạng thái đơn hàng (Pending -> Shipping -> Completed)
+pub async fn update_order_status(
+    State(pool): State<PgPool>,
+    Path(order_id): Path<Uuid>,
+    Json(payload): Json<UpdateStatusRequest>,
+) -> (StatusCode, Json<Value>) {
+    
+    let res = sqlx::query!(
+        "UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2", 
+        payload.status, order_id
+    )
+    .execute(&pool)
+    .await;
+
+    match res {
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                return (StatusCode::NOT_FOUND, Json(json!({"error": "Không tìm thấy đơn hàng"})));
+            }
+            (StatusCode::OK, Json(json!({"message": "✅ Đã cập nhật trạng thái đơn hàng!"})))
+        },
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": format!("Lỗi: {}", e)}))),
+    }
+}

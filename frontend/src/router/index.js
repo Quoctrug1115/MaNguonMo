@@ -88,24 +88,33 @@ const router = createRouter({
         {
           path: 'products',
           name: 'admin-products',
-          component: () => import('../views/admin/AdminProductsView.vue')
+          component: () => import('../views/admin/product/AdminProductsView.vue'),
+          meta: { requiresAdmin: true }
         },
         {
           path: 'manage-products',
           name: 'admin-product-list',
-          component: () => import('../views/admin/AdminProductList.vue')
+          component: () => import('../views/admin/product/AdminProductList.vue'),
+          meta: { requiresAdmin: true }
         },
         { 
           path: 'create-product',
           name: 'admin-product-create',
-          component: () => import('../views/admin/AdminProductCreate.vue')
+          component: () => import('../views/admin/product/AdminProductCreate.vue'),
+          meta: { requiresAdmin: true }
         },
         {
           path: 'edit-product/:id', // Có tham số :id
           name: 'admin-product-edit',
-          component: () => import('../views/admin/AdminProductEdit.vue'),
+          component: () => import('../views/admin/product/AdminProductEdit.vue'),
           meta: { requiresAdmin: true }
         },
+        {
+          path: 'manage-orders',
+          name: 'admin-orders',
+          component: () => import('../views/admin/orders/AdminOrderList.vue'),
+          meta: { requiresAdmin: true }
+        }
       ]
     },
     {

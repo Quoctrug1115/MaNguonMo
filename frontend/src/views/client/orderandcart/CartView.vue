@@ -2,28 +2,25 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { fetchCartCount } from '../../../store/cartState'
+import { fetchCartCount } from '../../../store/cartState' // Nhớ check lại đường dẫn này cho đúng với dự án của bạn nhé
 
 const router = useRouter()
 const cartItems = ref([])
 
-
+// 1. Hàm lấy giỏ hàng (Đã fix lỗi undefined & thêm Token)
 const fetchCart = async () => {
-  const userStr = localStorage.getItem('user')
+  const token = localStorage.getItem('token')
   
-  if (!userStr) {
-    // Nếu chưa đăng nhập thì đẩy về trang login
+  if (!token) {
     router.push('/login')
     return
   }
 
-  const user = JSON.parse(userStr)
-
   try {
-    // Gọi API của Rust
-    const res = await axios.get(`http://localhost:3000/api/cart/${user.id}`)
+    const res = await axios.get('http://localhost:3000/api/cart', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     
-    // Gán dữ liệu thật vào biến. Nhớ cấu trúc res.data.data nhé!
     cartItems.value = res.data.data
   } catch (error) {
     console.error("Lỗi lấy giỏ hàng:", error)
@@ -44,47 +41,51 @@ const decreaseQty = (item) => {
   }
 }
 
+// 2. Hàm Xóa sản phẩm (Đã thêm Token)
 const removeItem = async (cart_item_id) => {
   if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
-  fetchCartCount();
+  
+  const token = localStorage.getItem('token')
   try {
-    await axios.delete(`http://localhost:3000/api/cart/item/${cart_item_id}`);
-    // Xóa xong thì lọc mảng cục bộ để biến mất khỏi màn hình ngay
+    await axios.delete(`http://localhost:3000/api/cart/item/${cart_item_id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
     cartItems.value = cartItems.value.filter(i => i.cart_item_id !== cart_item_id);
+    fetchCartCount(); // Cập nhật lại số lượng trên header
   } catch (error) {
     console.error("Lỗi xóa sản phẩm:", error);
   }
 }
 
-// Tính tổng tiền dựa trên dữ liệu thật
 const subtotal = computed(() => {
   return cartItems.value.reduce((total, item) => total + (item.price * item.quantity), 0)
 })
 
-// Hàm format tiền tệ
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
 
+// 3. Hàm Cập nhật số lượng (Đã thêm Token)
 const updateQuantity = async (item, newQty) => {
-  if (newQty < 1) return; // Không cho giảm xuống dưới 1
+  if (newQty < 1) return; 
 
+  const token = localStorage.getItem('token')
   try {
-    await axios.put(`http://localhost:3000/api/cart/item/${item.cart_item_id}`, {
-      quantity: newQty
-    });
-    // Nếu API thành công, cập nhật số lượng hiển thị trên màn hình
+    // Tham số thứ 2 là body (data), tham số thứ 3 là cấu hình (headers)
+    await axios.put(`http://localhost:3000/api/cart/item/${item.cart_item_id}`, 
+      { quantity: newQty },
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    
     item.quantity = newQty;
-    fetchCartCount();
+    fetchCartCount(); 
   } catch (error) {
     console.error("Lỗi cập nhật số lượng:", error);
     alert("Không thể cập nhật số lượng!");
   }
 };
-
-
 </script>
-
 <template>
   <div class="container mx-auto px-4 max-w-6xl py-10 mb-20 text-gray-800">
     <nav class="text-sm text-gray-500 mb-10">

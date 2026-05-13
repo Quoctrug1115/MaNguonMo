@@ -15,13 +15,13 @@ const props = defineProps({
     default: () => ({
       id: '',
       name: 'Tên sản phẩm mặc định',
-      image_url: '',         // Đổi từ image -> image_url
+      image_url: '',
       price: 0,
-      original_price: 0,     // Đổi từ originalPrice -> original_price
-      discount_percent: 0,   // Đổi từ discount -> discount_percent
-      is_new: false,         // Đổi từ isNew -> is_new
+      original_price: 0,
+      discount_percent: 0,
+      is_new: false,
       rating: 0,
-      reviews_count: 0       // Đổi từ reviews -> reviews_count
+      reviews_count: 0
     })
   }
 })
@@ -35,46 +35,43 @@ const formattedOriginalPrice = computed(() => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(props.product.original_price || 0)
 })
 
-// Khai báo các hàm xử lý sự kiện
-const addToWishlist = () => {
-  console.log('Thêm vào yêu thích:', props.product.id)
-}
-
-const viewProductDetails = () => {
-  console.log('Xem nhanh sản phẩm:', props.product.id)
-}
-
-const addToCart = () => {
-  console.log('Thêm vào giỏ hàng:', props.product.id)
-}
-
-// 3. Viết hàm Thêm vào giỏ hàng
+// 3. Hàm Thêm vào giỏ hàng (ĐÃ FIX LỖI TOKEN & USER_ID)
 const handleAddToCart = async () => {
-  const userStr = localStorage.getItem('user')
   const token = localStorage.getItem('token')
 
-  if (!userStr || !token) {
+  if (!token) {
     alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!')
     router.push('/login')
     return
   }
 
-  const user = JSON.parse(userStr)
-
   try {
-    const response = await axios.post('http://localhost:3000/api/cart', {
-      user_id: user.id,          // ID người dùng đang đăng nhập
-      product_id: props.product.id, // ID của sản phẩm nằm trong cái thẻ này
-      quantity: 1                // Bấm ở ngoài thẻ thì mặc định thêm 1 cái
-    })
+    const response = await axios.post('http://localhost:3000/api/cart', 
+      {
+        // Xóa user_id đi vì Backend tự lấy từ Token
+        product_id: props.product.id, 
+        quantity: 1 
+      },
+      {
+        // BẮT BUỘC CÓ: Gửi Token qua Header cho Backend
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    )
 
-    if (response.status === 200) {
+    if (response.status === 200 || response.status === 201) {
       alert(`🛒 Đã thêm [${props.product.name}] vào giỏ hàng thành công!`)
       fetchCartCount()
     }
   } catch (error) {
-    console.error('Lỗi khi thêm vào giỏ hàng:', error)
-    alert('Có lỗi xảy ra, không thể thêm vào giỏ hàng lúc này.')
+    if (error.response?.status === 401) {
+      alert('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!')
+      router.push('/login')
+    } else {
+      console.error('Lỗi khi thêm vào giỏ hàng:', error)
+      alert('Có lỗi xảy ra, không thể thêm vào giỏ hàng lúc này.')
+    }
   }
 }
 
@@ -82,9 +79,12 @@ const isLiked = computed(() => {
   return likedProductIds.value.includes(props.product.id)
 })
 
+// 4. Hàm Thêm/Xóa Yêu Thích (ĐÃ BỔ SUNG TOKEN TRÁNH LỖI TƯƠNG TỰ)
 const toggleWishlist = async () => {
   const userStr = localStorage.getItem('user')
-  if (!userStr) {
+  const token = localStorage.getItem('token')
+
+  if (!userStr || !token) {
     alert('Vui lòng đăng nhập để sử dụng tính năng này!')
     router.push('/login')
     return
@@ -92,19 +92,24 @@ const toggleWishlist = async () => {
 
   const user = JSON.parse(userStr)
   
+  // Cấu hình Header chứa Token dùng chung cho cả gọi POST và DELETE
+  const config = {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }
+
   try {
     if (isLiked.value) {
-      // Nếu đã thích rồi -> Thực hiện XÓA
-      await axios.delete(`http://localhost:3000/api/wishlist/${user.id}/${props.product.id}`)
+      // Thực hiện XÓA (Truyền header vào tham số thứ 2 của axios.delete)
+      await axios.delete(`http://localhost:3000/api/wishlist/${user.id}/${props.product.id}`, config)
     } else {
-      // Nếu chưa thích -> Thực hiện THÊM
+      // Thực hiện THÊM (Truyền header vào tham số thứ 3 của axios.post)
       await axios.post('http://localhost:3000/api/wishlist', {
         user_id: user.id,
         product_id: props.product.id
-      })
+      }, config)
     }
     
-    // Sau khi gọi API xong, yêu cầu trạm phát sóng cập nhật lại dữ liệu ngay lập tức
+    // Yêu cầu trạm phát sóng cập nhật lại dữ liệu ngay lập tức
     fetchWishlist()
     
   } catch (error) {

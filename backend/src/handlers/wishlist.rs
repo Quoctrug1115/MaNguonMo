@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use uuid::Uuid;
+use crate::models::user::Claims;
 
 #[derive(Deserialize)]
 pub struct WishlistRequest {
@@ -37,11 +38,17 @@ pub async fn add_to_wishlist(
     Ok(Json(json!({ "message": "Đã thêm vào mục yêu thích" })))
 }
 
-// 2. API: LẤY DANH SÁCH MỤC YÊU THÍCH (GET)
+// 2. API: LẤY DANH SÁCH MỤC YÊU THÍCH (Dùng Token)
 pub async fn get_wishlist(
+    claims: Claims, // Tự động lấy UserID từ Token
     State(pool): State<PgPool>,
-    Path(user_id): Path<Uuid>,
-) -> Result<Json<Value>, (StatusCode, String)> {
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+
+    // Bóc tách ID an toàn
+    let user_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::UNAUTHORIZED, Json(json!({"error": "Token không hợp lệ"})))),
+    };
 
     let wishlist_items = sqlx::query!(
         r#"
@@ -55,9 +62,9 @@ pub async fn get_wishlist(
     )
     .fetch_all(&pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?;
 
-    // Đóng gói dữ liệu trả về cho Frontend
+    // Đóng gói dữ liệu
     let items_json: Vec<serde_json::Value> = wishlist_items.into_iter().map(|item| {
         json!({
             "product_id": item.product_id,

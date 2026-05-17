@@ -1,0 +1,102 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="1717" dy="945" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane1" parent="1" style="swimlane;startSize=20;" value="Người dùng (Client)" vertex="1">
+          <mxGeometry height="900" width="300" x="100" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="lane1" style="ellipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="135" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act1" parent="lane1" style="rounded=1;fillColor=#d5e8d4;" value="Nhập Username, Email, Pass" vertex="1">
+          <mxGeometry height="50" width="160" x="70" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="act5" parent="lane1" style="rounded=1;fillColor=#d5e8d4;" value="Nhập thông tin Đăng nhập" vertex="1">
+          <mxGeometry height="50" width="160" x="70" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="view_admin" parent="lane1" style="rounded=1;fillColor=#f8cecc;" value="Hiển thị Dashboard Quản trị" vertex="1">
+          <mxGeometry height="50" width="160" x="40" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="view_cust" parent="lane1" style="rounded=1;fillColor=#d5e8d4;" value="Hiển thị Trang chủ Bán hàng" vertex="1">
+          <mxGeometry height="50" width="160" x="140" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="lane1" style="ellipse;shape=doubleEllipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="105" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" parent="1" style="swimlane;startSize=20;" value="Hệ thống (Server/DB)" vertex="1">
+          <mxGeometry height="900" width="400" x="400" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act2" parent="lane2" style="rhombus;fillColor=#fff2cc;" value="Kiểm tra Username/Email tồn tại?" vertex="1">
+          <mxGeometry height="80" width="160" x="120" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="act3" parent="lane2" style="rounded=1;fillColor=#dae8fc;" value="Bấm mật khẩu (BCrypt)&#xa;Tạo password_hash" vertex="1">
+          <mxGeometry height="50" width="160" x="120" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="act4" parent="lane2" style="rounded=1;fillColor=#dae8fc;" value="Gán role_id mặc định&#xa;Lưu vào bảng USERS" vertex="1">
+          <mxGeometry height="50" width="160" x="120" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="act6" parent="lane2" style="rhombus;fillColor=#fff2cc;" value="So khớp password_hash" vertex="1">
+          <mxGeometry height="80" width="160" x="120" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="act7" parent="lane2" style="rounded=1;fillColor=#f5f5f5;" value="Cập nhật last_login&#xa;Ghi AUDIT_LOGS" vertex="1">
+          <mxGeometry height="50" width="160" x="120" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="act8" parent="lane2" style="rounded=1;fillColor=#dae8fc;" value="Trích xuất role_id từ ROLES" vertex="1">
+          <mxGeometry height="50" width="160" x="120" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="dec_role" parent="lane2" style="rhombus;fillColor=#fff2cc;" value="Vai trò là gì?" vertex="1">
+          <mxGeometry height="80" width="120" x="140" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="act1" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="act2" target="act3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="act2" style="edgeStyle=orthogonalEdgeStyle;entryX=1;entryY=0.5;" target="act1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="act3" target="act4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="act4" style="edgeStyle=orthogonalEdgeStyle;" target="act5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="act5" target="act6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="act6" target="act7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="act6" style="edgeStyle=orthogonalEdgeStyle;entryX=1;entryY=0.5;" target="act5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="act7" target="act8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="act8" target="dec_role">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="dec_role" target="view_admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="dec_role" style="edgeStyle=orthogonalEdgeStyle;" target="view_cust">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="view_admin" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="view_cust" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

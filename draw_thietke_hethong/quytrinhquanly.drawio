@@ -1,0 +1,78 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="1471" dy="810" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane_admin" parent="1" style="swimlane;startSize=20;fillColor=#f5f5f5;" value="Người quản lý (Admin)" vertex="1">
+          <mxGeometry height="800" width="250" x="100" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="lane_admin" style="ellipse;fillColor=#000000;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="110" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act1" parent="lane_admin" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;" value="Yêu cầu Báo cáo Doanh thu&#xa;&amp; Hiệu suất bán hàng" vertex="1">
+          <mxGeometry height="50" width="170" x="40" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="act4" parent="lane_admin" style="rhombus;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" value="Phát hiện bất thường?&#xa;(VD: Xóa đơn hàng, sửa giá)" vertex="1">
+          <mxGeometry height="80" width="160" x="10" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="act7" parent="lane_admin" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;" value="Xuất báo cáo quản trị&#xa;&amp; Xử lý vi phạm (nếu có)" vertex="1">
+          <mxGeometry height="50" width="160" x="10" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="lane_admin" style="ellipse;shape=doubleEllipse;fillColor=#000000;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="75" y="703" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_sys" parent="1" style="swimlane;startSize=20;fillColor=#f5f5f5;" value="Hệ thống (Reporting &amp; Audit Engine)" vertex="1">
+          <mxGeometry height="800" width="450" x="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act2" parent="lane_sys" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Truy vấn dữ liệu từ bảng:&#xa;ORDERS, REVIEWS, USERS" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="act3" parent="lane_sys" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" value="Tổng hợp biểu đồ doanh thu&#xa;&amp; Chỉ số hài lòng khách hàng" vertex="1">
+          <mxGeometry height="50" width="190" x="130" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="act5" parent="lane_sys" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Truy xuất Nhật ký hệ thống&#xa;(AUDIT_LOGS)" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="act6" parent="lane_sys" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Kiểm tra: Ai làm? Lúc nào?&#xa;Giá trị cũ vs Giá trị mới" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="lane_sys" source="act4" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" target="act5" value="Có nghi vấn">
+          <mxGeometry relative="1" x="-0.6" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="-125" y="260" />
+              <mxPoint x="-125" y="430" />
+              <mxPoint x="70" y="430" />
+              <mxPoint x="70" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="act1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="act1" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="act2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="act2" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="act3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="act3" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" target="act4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="act4" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="act7" value="Bình thường">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="act5" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="act6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="act6" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" target="act7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="act7" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="end" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

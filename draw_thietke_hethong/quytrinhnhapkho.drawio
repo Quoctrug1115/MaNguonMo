@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="1471" dy="810" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane_stk" parent="1" style="swimlane;startSize=20;" value="Thủ kho / Admin" vertex="1">
+          <mxGeometry height="800" width="250" x="100" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="lane_stk" style="ellipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="110" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act1" parent="lane_stk" style="rounded=1;fillColor=#fff2cc;" value="Chọn Nhà cung cấp&#xa;(Từ bảng SUPPLIERS)" vertex="1">
+          <mxGeometry height="50" width="140" x="55" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="act2" parent="lane_stk" style="rounded=1;fillColor=#d5e8d4;" value="Chọn Sản phẩm &amp; Biến thể&#xa;(PRODUCT_VARIANTS)" vertex="1">
+          <mxGeometry height="50" width="160" x="45" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="act3" parent="lane_stk" style="rounded=1;fillColor=#d5e8d4;" value="Quét mã Serial/IMEI&#xa;cho từng thiết bị" vertex="1">
+          <mxGeometry height="50" width="140" x="55" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="lane_stk" style="ellipse;shape=doubleEllipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="110" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_sys" parent="1" style="swimlane;startSize=20;" value="Hệ thống (Logic &amp; DB)" vertex="1">
+          <mxGeometry height="800" width="450" x="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act4" parent="lane_sys" style="rhombus;fillColor=#fff2cc;" value="Kiểm tra Serial đã tồn tại?" vertex="1">
+          <mxGeometry height="80" width="160" x="145" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="act5" parent="lane_sys" style="rounded=1;fillColor=#dae8fc;" value="Tạo danh sách bản ghi mới&#xa;trong INVENTORY_ITEMS" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="act6" parent="lane_sys" style="rounded=1;fillColor=#dae8fc;" value="Cập nhật stock_quantity&#xa;trong PRODUCT_VARIANTS" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="act7" parent="lane_sys" style="rounded=1;fillColor=#f5f5f5;" value="Lưu lịch sử nhập hàng&#xa;vào AUDIT_LOGS" vertex="1">
+          <mxGeometry height="50" width="160" x="145" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="act1" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="act2" target="act3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="act3" target="act4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="act4" target="act5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="act4" style="edgeStyle=orthogonalEdgeStyle;entryX=1;entryY=0.5;" target="act3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="act5" target="act6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="act6" target="act7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="act7" style="edgeStyle=orthogonalEdgeStyle;" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

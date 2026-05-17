@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="1585" dy="872" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane_cust" parent="1" style="swimlane;startSize=20;" value="Khách hàng" vertex="1">
+          <mxGeometry height="830" width="250" x="100" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="lane_cust" style="ellipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="110" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act1" parent="lane_cust" style="rounded=1;fillColor=#d5e8d4;" value="Kiểm tra giỏ hàng (CART)&#xa;Bấm Thanh toán" vertex="1">
+          <mxGeometry height="50" width="160" x="45" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="act3" parent="lane_cust" style="rounded=1;fillColor=#d5e8d4;" value="Nhập mã giảm giá&#xa;(VOUCHERS)" vertex="1">
+          <mxGeometry height="50" width="140" x="60" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="act5" parent="lane_cust" style="rounded=1;fillColor=#d5e8d4;" value="Chọn phương thức thanh toán&#xa;(Tiền mặt/Chuyển khoản)" vertex="1">
+          <mxGeometry height="50" width="180" x="35" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="act9" parent="lane_cust" style="rounded=1;fillColor=#d5e8d4;" value="Gửi thông báo thành công&#xa;&amp; Xuất hóa đơn" vertex="1">
+          <mxGeometry height="50" width="160" x="45" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="lane_cust" style="ellipse;shape=doubleEllipse;fillColor=#000000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="110" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_sys" parent="1" style="swimlane;startSize=20;" value="Hệ thống &amp; Thanh toán" vertex="1">
+          <mxGeometry height="830" width="440" x="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="act2" parent="lane_sys" style="rhombus;fillColor=#fff2cc;" value="Kiểm tra tồn kho (Stock)&#xa;PRODUCT_VARIANTS" vertex="1">
+          <mxGeometry height="80" width="160" x="145" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="act4" parent="lane_sys" style="rounded=1;fillColor=#dae8fc;" value="VOUCHERS.validate()&#xa;&amp; Tính toán tổng tiền" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="act6" parent="lane_sys" style="rounded=1;fillColor=#f8cecc;" value="Tạo đơn hàng (ORDERS)&#xa;&amp; Chi tiết (ORDER_ITEMS)" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="act7" parent="lane_sys" style="rounded=1;fillColor=#dae8fc;" value="Giảm stock_quantity ở&#xa;PRODUCT_VARIANTS" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="act8" parent="lane_sys" style="rounded=1;fillColor=#fff2cc;" value="Cập nhật loyalty_points cho&#xa;CUSTOMERS" vertex="1">
+          <mxGeometry height="50" width="180" x="135" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="act1" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="act2" target="act3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="act2" style="edgeStyle=orthogonalEdgeStyle;entryX=1;entryY=0.5;" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="act3" target="act4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="act4" style="edgeStyle=orthogonalEdgeStyle;entryX=0.5;entryY=0;" target="act5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="act5" style="edgeStyle=orthogonalEdgeStyle;entryX=0;entryY=0.5;" target="act6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="act6" target="act7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="act7" target="act8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="act8" style="edgeStyle=orthogonalEdgeStyle;" target="act9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="act9" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

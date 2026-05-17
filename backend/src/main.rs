@@ -37,7 +37,6 @@ async fn main() {
 
     tracing::info!("Connected to the database successfully!");
 
-    // CẤU HÌNH CORS Ở ĐÂY
     let cors = CorsLayer::new()
         .allow_origin(Any) // Trong môi trường dev, cho phép mọi origin gọi API
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])

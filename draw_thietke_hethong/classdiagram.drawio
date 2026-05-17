@@ -1,0 +1,187 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="2289" dy="1247" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="cRoles" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#dae8fc;fontSize=16;" value="ROLES" vertex="1">
+          <mxGeometry height="150" width="220" x="75" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="cRolesAttr" parent="cRoles" style="text;align=left;spacingLeft=4;fontSize=16;" value="- role_id: int (PK)&#xa;- name: string&#xa;- description: string&#xa;- created_at: datetime" vertex="1">
+          <mxGeometry height="84" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cRolesMeth" parent="cRoles" style="text;align=left;spacingLeft=4;fontSize=16;" value="+ getPermissions()" vertex="1">
+          <mxGeometry height="40" width="220" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cUsers" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#dae8fc;fontSize=16;" value="USERS" vertex="1">
+          <mxGeometry height="280" width="220" x="75" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="cUsersAttr" parent="cUsers" style="text;align=left;spacingLeft=4;fontSize=16;" value="- user_id: int (PK)&#xa;- username: string&#xa;- password_hash: string&#xa;- full_name: string&#xa;- email: string&#xa;- phone: string&#xa;- role_id: int (FK)&#xa;- is_active: boolean&#xa;- is_deleted: boolean&#xa;- last_login: datetime&#xa;- created_at: datetime" vertex="1">
+          <mxGeometry height="194" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cUsersMeth" parent="cUsers" style="text;align=left;spacingLeft=4;fontSize=16;" value="+ login()&#xa;+ resetPassword()" vertex="1">
+          <mxGeometry height="60" width="220" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="cProd" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#d5e8d4;fontSize=16;" value="PRODUCTS" vertex="1">
+          <mxGeometry height="230" width="240" x="390" y="1140" as="geometry" />
+        </mxCell>
+        <mxCell id="cProdAttr" parent="cProd" style="text;align=left;spacingLeft=4;fontSize=16;" value="- product_id: int (PK)&#xa;- category_id: int (FK)&#xa;- brand_id: int (FK)&#xa;- name: string&#xa;- description: string&#xa;- specifications: jsonb&#xa;- created_at: datetime&#xa;- is_deleted: boolean" vertex="1">
+          <mxGeometry height="154" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cProdMeth" parent="cProd" style="text;align=left;spacingLeft=4;fontSize=16;" value="+ updateSpecs()" vertex="1">
+          <mxGeometry height="50" width="240" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="cVar" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#d5e8d4;fontSize=16;" value="PRODUCT_VARIANTS" vertex="1">
+          <mxGeometry height="260" width="290" x="40" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="cVarAttr" parent="cVar" style="text;align=left;spacingLeft=4;fontSize=16;" value="- variant_id: int (PK)&#xa;- product_id: int (FK)&#xa;- sku: string&#xa;- attribute_values: jsonb&#xa;- price_import: numeric&#xa;- price_selling: numeric&#xa;- stock_quantity: int&#xa;- is_active: boolean" vertex="1">
+          <mxGeometry height="234" width="290" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cVarMeth" parent="cVar" style="text;align=left;spacingLeft=4;fontSize=16;" value="+ checkStock()&#xa;+ setPrice()" vertex="1">
+          <mxGeometry height="50" width="240" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="cInv" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#d5e8d4;fontSize=16;" value="INVENTORY_ITEMS" vertex="1">
+          <mxGeometry height="200" width="240" x="380" y="1570" as="geometry" />
+        </mxCell>
+        <mxCell id="cInvAttr" parent="cInv" style="text;align=left;spacingLeft=4;fontSize=16;" value="- item_id: int (PK)&#xa;- variant_id: int (FK)&#xa;- serial_number: string&#xa;- status: string&#xa;- import_date: datetime" vertex="1">
+          <mxGeometry height="124" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cSerials" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#f8cecc;fontSize=16;" value="ORDER_ITEM_SERIALS" vertex="1">
+          <mxGeometry height="110" width="240" x="380" y="1410" as="geometry" />
+        </mxCell>
+        <mxCell id="cSerialsAttr" parent="cSerials" style="text;align=left;spacingLeft=4;fontSize=16;" value="- order_item_id: int (FK)&#xa;- item_id: int (FK)" vertex="1">
+          <mxGeometry height="64" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cCust" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#fff2cc;fontSize=16;" value="CUSTOMERS" vertex="1">
+          <mxGeometry height="220" width="240" x="950" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="cCustAttr" parent="cCust" style="text;align=left;spacingLeft=4;fontSize=16;" value="- customer_id: int (PK)&#xa;- full_name: string&#xa;- phone: string&#xa;- email: string&#xa;- address: string&#xa;- loyalty_points: int&#xa;- created_at: datetime" vertex="1">
+          <mxGeometry height="144" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cVouch" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#e1d5e7;fontSize=16;" value="VOUCHERS" vertex="1">
+          <mxGeometry height="260" width="240" x="660" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="cVouchAttr" parent="cVouch" style="text;align=left;spacingLeft=4;fontSize=16;" value="- voucher_id: int (PK)&#xa;- code: string&#xa;- discount_type: string&#xa;- discount_value: numeric&#xa;- min_order_value: numeric&#xa;- max_discount: numeric&#xa;- start_date: datetime&#xa;- end_date: datetime&#xa;- usage_limit: int&#xa;- used_count: int&#xa;- is_active: boolean" vertex="1">
+          <mxGeometry height="184" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cOrders" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#f8cecc;fontSize=16;" value="ORDERS" vertex="1">
+          <mxGeometry height="280" width="260" x="650" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="cOrdersAttr" parent="cOrders" style="text;align=left;spacingLeft=4;fontSize=16;" value="- order_id: int (PK)&#xa;- customer_id: int (FK)&#xa;- user_id: int (FK)&#xa;- voucher_id: int (FK)&#xa;- order_date: datetime&#xa;- total_final: numeric&#xa;- status: string" vertex="1">
+          <mxGeometry height="184" width="260" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cOrdersMeth" parent="cOrders" style="text;align=left;spacingLeft=4;fontSize=16;" value="+ calculateTotal()&#xa;+ applyVoucher()" vertex="1">
+          <mxGeometry height="70" width="260" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="cItems" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#f8cecc;fontSize=16;" value="ORDER_ITEMS" vertex="1">
+          <mxGeometry height="190" width="240" x="650" y="1370" as="geometry" />
+        </mxCell>
+        <mxCell id="cItemsAttr" parent="cItems" style="text;align=left;spacingLeft=4;fontSize=16;" value="- order_item_id: int (PK)&#xa;- order_id: int (FK)&#xa;- variant_id: int (FK)&#xa;- quantity: int&#xa;- unit_price: numeric&#xa;- subtotal: numeric" vertex="1">
+          <mxGeometry height="114" width="240" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cWarr" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#ffe6cc;fontSize=16;" value="WARRANTIES" vertex="1">
+          <mxGeometry height="210" width="220" x="960" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="cWarrAttr" parent="cWarr" style="text;align=left;spacingLeft=4;fontSize=16;" value="- warranty_id: int (PK)&#xa;- item_id: int (FK)&#xa;- customer_id: int (FK)&#xa;- start_date: date&#xa;- end_date: date&#xa;- status: string" vertex="1">
+          <mxGeometry height="134" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cCat" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#d5e8d4;fontSize=16;" value="CATEGORIES" vertex="1">
+          <mxGeometry height="170" width="200" x="85" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="cCatAttr" parent="cCat" style="text;align=left;spacingLeft=4;fontSize=16;" value="- category_id: int (PK)&#xa;- name: string&#xa;- parent_id: int (FK)&#xa;- is_deleted: boolean" vertex="1">
+          <mxGeometry height="94" width="200" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="cSupp" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#fff2cc;fontSize=16;" value="SUPPLIERS" vertex="1">
+          <mxGeometry height="190" width="200" x="440" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="cSuppAttr" parent="cSupp" style="text;align=left;spacingLeft=4;fontSize=16;" value="- supplier_id: int (PK)&#xa;- name: string&#xa;- phone: string&#xa;- address: string" vertex="1">
+          <mxGeometry height="114" width="200" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="cUsers" style="endArrow=block;endSize=16;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cRoles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="cUsers" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cAudit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="cBrands" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cProd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="cBrands" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cProd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" edge="1" parent="1" source="cAudit" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cVar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r6" edge="1" parent="1" source="cVar" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cInv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r7" edge="1" parent="1" source="cCust" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cOrders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r8" edge="1" parent="1" source="cOrders" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cItems">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9" edge="1" parent="1" source="cVouch" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cOrders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r10" edge="1" parent="1" source="cInv" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cSerials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r11" edge="1" parent="1" source="cItems" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cSerials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r12" edge="1" parent="1" source="cInv" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cWarr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r13" edge="1" parent="1" source="cCust" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cWarr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r14" edge="1" parent="1" source="cUsers" style="endArrow=open;endSize=12;dashed=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cOrders" value="manages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r15" edge="1" parent="1" source="cBrands" style="endArrow=open;endSize=12;dashed=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cProd" value="supplies">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r16" edge="1" parent="1" source="cCat" style="endArrow=block;endSize=16;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cCat" value="belongs to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r17" edge="1" parent="1" source="cVouch" style="endArrow=open;endSize=12;dashed=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cCust" value="validates">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r18" edge="1" parent="1" source="cVar" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cItems" value="links">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kTHKNtSDPAkjAUMmXNkY-3" edge="1" parent="1" source="cProd" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cAudit" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="355" as="sourcePoint" />
+            <mxPoint x="185" y="1700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cAudit" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#dae8fc;fontSize=16;" value="AUDIT_LOGS" vertex="1">
+          <mxGeometry height="220" width="220" x="75" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="cAuditAttr" parent="cAudit" style="text;align=left;spacingLeft=4;fontSize=16;" value="- log_id: bigint (PK)&#xa;- user_id: int (FK)&#xa;- action: string&#xa;- table_name: string&#xa;- record_id: int&#xa;- old_value: jsonb&#xa;- new_value: jsonb&#xa;- ip_address: string&#xa;- created_at: datetime" vertex="1">
+          <mxGeometry height="154" width="220" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="kTHKNtSDPAkjAUMmXNkY-4" edge="1" parent="1" source="cSupp" style="endArrow=open;endSize=12;dashed=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cBrands" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1410" y="125" as="sourcePoint" />
+            <mxPoint x="500" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kTHKNtSDPAkjAUMmXNkY-5" edge="1" parent="1" source="cCat" style="endArrow=none;html=1;startArrow=diamond;startFill=1;edgeStyle=orthogonalEdgeStyle;fontSize=16;" target="cBrands" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="285" y="605" as="sourcePoint" />
+            <mxPoint x="510" y="1140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cBrands" parent="1" style="swimlane;fontStyle=1;align=center;fillColor=#d5e8d4;fontSize=16;" value="BRANDS" vertex="1">
+          <mxGeometry height="110" width="200" x="320" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="cBrandsAttr" parent="cBrands" style="text;align=left;spacingLeft=4;fontSize=16;" value="- brand_id: int (PK)&#xa;- name: string&#xa;- website: string&#xa;- is_deleted: boolean" vertex="1">
+          <mxGeometry height="84" width="200" y="26" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

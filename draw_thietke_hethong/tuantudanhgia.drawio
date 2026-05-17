@@ -1,0 +1,100 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="FmkNvWvJOgXje2U_g7OY">
+    <mxGraphModel dx="2060" dy="1122" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="main_frame" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;width=250;height=30;boundedLbl=1;verticalAlign=middle;align=left;spacingLeft=5;fontSize=18;" value="sd: Quy trình Gửi Đánh giá &amp;amp; Phản hồi Sản phẩm" vertex="1">
+          <mxGeometry height="1050" width="1500" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_cust" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlActor;fontSize=18;" value="Khách hàng" vertex="1">
+          <mxGeometry height="950" width="20" x="80" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_ui" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=18;" value=":TrangSảnPhẩm (UI)" vertex="1">
+          <mxGeometry height="950" width="150" x="240" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_rev_svc" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=18;" value=":BộXửLýĐánhGiá" vertex="1">
+          <mxGeometry height="950" width="140" x="500" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_db_order" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=18;" value=":Bảng_CHI_TIẾT_ĐƠN" vertex="1">
+          <mxGeometry height="950" width="160" x="750" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_db_rev" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#f8cecc;strokeColor=#b85450;fontSize=18;" value=":Bảng_ĐÁNH_GIÁ" vertex="1">
+          <mxGeometry height="950" width="140" x="1000" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obj_audit" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#f5f5f5;fontSize=18;" value=":Bảng_NHẬT_KÝ" vertex="1">
+          <mxGeometry height="950" width="120" x="1250" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="m1" edge="1" parent="1" style="endArrow=classic;html=1;verticalAlign=bottom;fontSize=18;" value="1. Nhập bình luận &amp;amp; chọn số sao">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="90" y="160" as="sourcePoint" />
+            <mxPoint x="315" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="endArrow=classic;html=1;verticalAlign=bottom;fontSize=18;" value="2. gửiĐánhGiá(ngườiDùng_id, sảnPhẩm_id, nộiDung)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="315" y="210" as="sourcePoint" />
+            <mxPoint x="570" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="endArrow=classic;html=1;verticalAlign=bottom;fontSize=18;" value="3. kiểmTraLịchSửMuaHàng(ngườiDùng_id, sp_id)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="260" as="sourcePoint" />
+            <mxPoint x="830" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="endArrow=open;html=1;verticalAlign=bottom;dashed=1;endFill=0;fontSize=18;" value="4. Trả về: Đã mua &amp;amp; đã nhận hàng thành công">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="310" as="sourcePoint" />
+            <mxPoint x="570" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="alt1" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;width=200;height=30;boundedLbl=1;fontSize=18;" value="alt: Xác thực quyền đánh giá" vertex="1">
+          <mxGeometry height="600" width="1400" x="50" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_ok" parent="1" style="text;align=left;verticalAlign=middle;fontStyle=1;fontSize=18;" value="[KHÁCH ĐÃ MUA HÀNG]" vertex="1">
+          <mxGeometry height="30" width="180" x="60" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="endArrow=classic;html=1;verticalAlign=bottom;fontSize=18;" value="5. lưuBảnGhiĐánhGiáMới()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="440" as="sourcePoint" />
+            <mxPoint x="1070" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="endArrow=classic;html=1;verticalAlign=bottom;fontSize=18;" value="6. ghiNhậtKý(&#39;GỬI_ĐÁNH_GIÁ_SẢN_PHẨM&#39;)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="490" as="sourcePoint" />
+            <mxPoint x="1310" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="endArrow=open;html=1;verticalAlign=bottom;dashed=1;endFill=0;fontSize=18;" value="7. Phản hồi: &#39;Cảm ơn bạn đã đánh giá!&#39;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="550" as="sourcePoint" />
+            <mxPoint x="315" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sep" edge="1" parent="1" style="line;strokeWidth=1;dashed=1;html=1;fontSize=18;" value="">
+          <mxGeometry height="10" width="1400" x="50" y="620" as="geometry">
+            <mxPoint x="50" y="620" as="sourcePoint" />
+            <mxPoint x="1450" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_fail" parent="1" style="text;align=left;verticalAlign=middle;fontColor=#FF0000;fontStyle=1;fontSize=18;" value="[CHƯA MUA HÀNG]" vertex="1">
+          <mxGeometry height="30" width="150" x="60" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="endArrow=open;html=1;verticalAlign=bottom;dashed=1;endFill=0;fontColor=#FF0000;fontSize=18;" value="8. Thông báo: &#39;Bạn cần mua hàng để đánh giá&#39;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="690" as="sourcePoint" />
+            <mxPoint x="315" y="690" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" style="endArrow=open;html=1;verticalAlign=bottom;dashed=1;endFill=0;fontSize=18;" value="9. Hiển thị danh sách đánh giá cũ">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="315" y="750" as="sourcePoint" />
+            <mxPoint x="90" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

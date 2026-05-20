@@ -73,11 +73,13 @@ async fn main() {
         .layer(cors)
         .with_state(pool);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::info!("Server is running on http://{}", addr);
+        let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+        let addr = format!("0.0.0.0:{}", port);
+
+        tracing::info!("Server is running on {}", addr);
+
+        let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 }
 
 async fn health_check() -> &'static str {

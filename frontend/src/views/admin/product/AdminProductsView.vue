@@ -10,7 +10,7 @@ const isLoading = ref(true)
 // Hàm gọi API lấy danh sách sản phẩm
 const fetchProducts = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/products')
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`)
     // Giả sử backend trả về { data: [...] }
     products.value = res.data.data || res.data
   } catch (error) {

@@ -23,7 +23,7 @@ const handleLogin = async () => {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/auth/login', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ const handleGoogleLoginSuccess = async (response) => {
   const token = response.credential;
   
   try {
-    const res = await axios.post('http://localhost:3000/api/auth/google', {
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/google`, {
       token: token
     });
     

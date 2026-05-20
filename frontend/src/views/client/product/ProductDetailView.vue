@@ -19,7 +19,7 @@ const productDetail = ref({
 
 const fetchProductDetail = async () => {
   try {
-    const response = await fetch(`http://localhost:3000/api/products/${route.params.id}`)
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products/${route.params.id}`)
     const result = await response.json()
     if (response.ok) {
       // Gán dữ liệu thật vào biến
@@ -51,7 +51,7 @@ const slideRight = () => { document.getElementById('related-slider')?.scrollBy({
 const relatedProducts = ref([])
 const fetchRelatedProducts = async () => {
   try {
-    const response = await fetch(`http://localhost:3000/api/products?limit=12`)
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products?limit=12`)
     const result = await response.json()
     if (response.ok) {
       relatedProducts.value = result.data.filter(item => item.id !== route.params.id)
@@ -85,7 +85,7 @@ const handleAddToCart = async () => {
 
   // 2. Gọi API thêm vào giỏ
   try {
-    const response = await axios.post('http://localhost:3000/api/cart', {
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
       user_id: user.id,
       product_id: product.value.id, // Lấy ID của sản phẩm đang xem
       quantity: quantity.value || 1 // Lấy số lượng người dùng chọn (mặc định là 1)

@@ -29,7 +29,7 @@ const fetchProducts = async () => {
     if (route.query.max_price) params.max_price = route.query.max_price
     if (route.query.category) params.category_id = route.query.category 
 
-    const res = await axios.get('http://localhost:3000/api/products', { params })
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`, { params })
     productList.value = res.data.data
     
   } catch (error) {

@@ -17,7 +17,7 @@ const fetchCart = async () => {
   }
 
   try {
-    const res = await axios.get('http://localhost:3000/api/cart', {
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     
@@ -47,7 +47,7 @@ const removeItem = async (cart_item_id) => {
   
   const token = localStorage.getItem('token')
   try {
-    await axios.delete(`http://localhost:3000/api/cart/item/${cart_item_id}`, {
+    await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/cart/item/${cart_item_id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -73,7 +73,7 @@ const updateQuantity = async (item, newQty) => {
   const token = localStorage.getItem('token')
   try {
     // Tham số thứ 2 là body (data), tham số thứ 3 là cấu hình (headers)
-    await axios.put(`http://localhost:3000/api/cart/item/${item.cart_item_id}`, 
+    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/cart/item/${item.cart_item_id}`, 
       { quantity: newQty },
       { headers: { 'Authorization': `Bearer ${token}` } }
     );

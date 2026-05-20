@@ -24,7 +24,7 @@ const specifications = ref([])
 const fetchOldData = async () => {
     console.log("Đang lấy dữ liệu cho sản phẩm ID:", productId);
   try {
-    const res = await axios.get(`http://localhost:3000/api/admin/products/${productId}`)
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`)
     const oldData = res.data.data
     
     // Đổ dữ liệu vào Form
@@ -44,7 +44,7 @@ const fetchOldData = async () => {
 }
 
 const fetchCategories = async () => {
-  const res = await axios.get('http://localhost:3000/api/categories')
+  const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/categories`)
   categoriesList.value = res.data
 }
 
@@ -72,7 +72,7 @@ const handleUpdate = async () => {
       specifications: specifications.value.filter(s => s.spec_name.trim() !== '')
     }
 
-    await axios.put(`http://localhost:3000/api/admin/products/${productId}`, payload, {
+    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`, payload, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 
@@ -120,7 +120,7 @@ const handleFileUpload = async (event) => {
 
   try {
     isUploading.value = true
-    const res = await axios.post('http://localhost:3000/api/admin/upload', formData, {
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 

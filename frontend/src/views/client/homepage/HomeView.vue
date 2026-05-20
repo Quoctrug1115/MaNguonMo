@@ -14,7 +14,7 @@ const productList = ref([])
 // 3. Hàm gọi API lấy dữ liệu thực từ Rust
 const fetchProducts = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/products');
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products`);
     
     productList.value = res.data.data;
     

@@ -15,7 +15,7 @@ const itemsPerPage = 9
 const fetchProducts = async () => {
   try {
     isLoading.value = true
-    const res = await axios.get('http://localhost:3000/api/admin/product-variants')
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/product-variants`)
     
     products.value = (res.data.data || res.data).map(p => ({
       ...p,
@@ -91,7 +91,7 @@ const handleDelete = async (id) => {
     const token = localStorage.getItem('token')
     
     // 2. Gọi API Xóa
-    await axios.delete(`http://localhost:3000/api/admin/products/${id}`, {
+    await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 

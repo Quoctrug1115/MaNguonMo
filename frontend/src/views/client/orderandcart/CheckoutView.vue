@@ -23,7 +23,7 @@ const fetchCart = async () => {
     return
   }
   try {
-    const res = await axios.get('http://localhost:3000/api/cart', {
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/cart`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     cartItems.value = res.data.data
@@ -54,7 +54,7 @@ const placeOrder = async () => {
 
   try {
     // 2. Gọi API Checkout (XÓA BỎ DÒNG user_id)
-    const res = await axios.post('http://localhost:3000/api/orders/checkout', {
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/orders/checkout`, {
       shipping_address: `${form.value.address}, ${form.value.city}`,
       phone_number: form.value.phone
     }, {

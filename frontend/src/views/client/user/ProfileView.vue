@@ -26,7 +26,7 @@ const getAuthHeaders = () => {
 const fetchProfile = async () => {
   try {
 
-    const res = await axios.get(`http://localhost:3000/api/profile`, getAuthHeaders())
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/profile`, getAuthHeaders())
     console.log("Dữ liệu Backend trả về:", res.data);
     if (res.data) {
         const userData = res.data.data || res.data || res.data.user;
@@ -68,7 +68,7 @@ const handleSave = async () => {
     }
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-    await axios.put(`http://localhost:3000/api/profile`, payload, getAuthHeaders())
+    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/profile`, payload, getAuthHeaders())
     
     alert('Cập nhật hồ sơ thành công!')
     password.value = { old: '', new: '', confirm: '' }

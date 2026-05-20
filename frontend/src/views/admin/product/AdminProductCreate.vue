@@ -11,7 +11,7 @@ const categoriesList = ref([])
 
 const fetchCategories = async () => {
   try {
-    const res = await axios.get('http://localhost:3000/api/categories')
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/categories`)
     categoriesList.value = res.data // Gán dữ liệu trả về vào mảng
   } catch (error) {
     console.error("Lỗi khi tải danh mục:", error)
@@ -87,7 +87,7 @@ const handleFileUpload = async (event) => {
 
   try {
     isUploading.value = true
-    const res = await axios.post('http://localhost:3000/api/admin/upload', formData, {
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
@@ -163,7 +163,7 @@ const payload = {
     console.log("Dữ liệu chuẩn bị gửi đi:", payload);
 
     // GỌI API
-    await axios.post('http://localhost:3000/api/admin/products', payload, {
+    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/admin/products`, payload, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 

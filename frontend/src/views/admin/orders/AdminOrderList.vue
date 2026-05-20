@@ -20,7 +20,7 @@ const fetchOrders = async () => {
     isLoading.value = true
     const token = localStorage.getItem('token')
     
-    const res = await axios.get('http://localhost:3000/api/admin/orders', {
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/orders`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     orders.value = res.data.data
@@ -37,7 +37,7 @@ const handleStatusChange = async (orderId, newStatus) => {
   try {
     const token = localStorage.getItem('token')
     
-    await axios.put(`http://localhost:3000/api/admin/orders/${orderId}/status`, 
+    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/admin/orders/${orderId}/status`, 
       { status: newStatus },
       { headers: { Authorization: `Bearer ${token}` } }
     )

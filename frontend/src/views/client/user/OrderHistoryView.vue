@@ -16,7 +16,7 @@ const fetchOrders = async () => {
   }
 
   try {
-    const res = await axios.get('http://localhost:3000/api/orders/user', {
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/orders/user`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     orders.value = res.data.data

@@ -73,13 +73,13 @@ async fn main() {
         .layer(cors)
         .with_state(pool);
 
-        let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+        let port = std::env::var("PORT").unwrap_or_else(|_| "10000".to_string());
+        let addr = format!("0.0.0.0:{}", port).parse::<SocketAddr>().unwrap();
+    
+        tracing::info!("Server is running on http://{}", addr);
 
-        let addr = format!("0.0.0.0:{}", port);
-
-        tracing::info!("Server is running on {}", addr);
-
-        let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        axum::serve(listener, app).await.unwrap();
 }
 
 async fn health_check() -> &'static str {
